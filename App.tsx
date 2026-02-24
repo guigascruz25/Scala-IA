@@ -33,23 +33,16 @@ const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   
-  const [hasApiKey, setHasApiKey] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState(() => !!localStorage.getItem('user_gemini_key'));
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
-  useEffect(() => {
-    const checkKey = async () => {
-      // @ts-ignore
-      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-        try {
-          // @ts-ignore
-          const hasKey = await window.aistudio.hasSelectedApiKey();
-          setHasApiKey(hasKey);
-        } catch (e) {
-          console.error("Erro ao verificar API Key:", e);
-        }
-      }
-    };
-    checkKey();
-  }, []);
+  const handleSaveKey = () => {
+    if (apiKeyInput.trim()) {
+      localStorage.setItem('user_gemini_key', apiKeyInput.trim());
+      setHasApiKey(true);
+      window.location.reload();
+    }
+  };
 
   const resetApp = () => {
     if (isProcessing) return;
@@ -70,11 +63,6 @@ const App: React.FC = () => {
       setAnalysis(result);
       setStep('analysis');
     } catch (e: any) { 
-      // @ts-ignore
-      if (e?.message?.includes('Requested entity was not found.') && window.aistudio) {
-        // @ts-ignore
-        await window.aistudio.openSelectKey();
-      }
       alert("Análise falhou. Verifique sua conexão ou chave de API."); 
     } finally { setIsProcessing(false); }
   };
@@ -115,11 +103,6 @@ const App: React.FC = () => {
         alert("A IA não retornou imagens. Tente ajustar o prompt ou ativos.");
       }
     } catch (e: any) { 
-      // @ts-ignore
-      if (e?.message?.includes('Requested entity was not found.') && window.aistudio) {
-        // @ts-ignore
-        await window.aistudio.openSelectKey();
-      }
       alert("Erro na geração. Detalhes: " + (e.message || "Erro desconhecido")); 
     } finally { 
       clearInterval(interval);
@@ -135,10 +118,7 @@ const App: React.FC = () => {
     const a = document.createElement('a'); a.href = url; a.download = `scala-${id}.jpg`; a.click();
   };
 
-  // @ts-ignore
-  const isInsideAiStudio = !!window.aistudio;
-
-  if (!hasApiKey && isInsideAiStudio) {
+  if (!hasApiKey) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
         <Header onLogoClick={resetApp} />
@@ -151,38 +131,77 @@ const App: React.FC = () => {
             </div>
             <h2 className="text-3xl font-bold text-white">Conecte sua Inteligência</h2>
             <p className="text-slate-400 text-lg">
-              Para usar a tecnologia Scala, você precisa conectar uma chave de API de um projeto Google Cloud com faturamento ativo.
+              Para usar a tecnologia Scala, você precisa inserir sua própria API Key do Google Gemini.
             </p>
           </div>
 
-          <div className="bg-slate-900/50 p-6 rounded-2xl text-left space-y-3 border border-slate-800">
-            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Passos para o usuário:</h3>
-            <ul className="text-sm text-slate-300 space-y-2 list-disc pl-4">
-              <li>Certifique-se de estar logado na conta Google desejada.</li>
-              <li>O projeto deve ter a <strong>Generative Language API</strong> ativada.</li>
-              <li>Modelos Pro exigem um projeto com <strong>faturamento (billing)</strong> configurado.</li>
-              <li>Consulte a <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-indigo-400 underline">documentação de faturamento</a> para mais detalhes.</li>
-            </ul>
+          <div className="space-y-4">
+            <div className="relative">
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="Insira sua Gemini API Key aqui..."
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              />
+            </div>
+            
+            <button 
+              onClick={handleSaveKey}
+              disabled={!apiKeyInput.trim()}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]"
+            >
+              Salvar Chave de API
+            </button>
+
+            <div className="pt-2">
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-indigo-400 hover:text-indigo-300 text-sm font-medium underline underline-offset-4"
+              >
+                Onde gerar minha API Key?
+              </a>
+            </div>
           </div>
 
-          <button 
-            onClick={async () => {
-              // @ts-ignore
-              if (window.aistudio) await window.aistudio.openSelectKey();
-              setHasApiKey(true);
-            }} 
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]"
-          >
-            Selecionar Chave de API
-          </button>
+          <div className="bg-slate-900/50 p-6 rounded-2xl text-left space-y-3 border border-slate-800">
+            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Requisitos:</h3>
+            <ul className="text-sm text-slate-300 space-y-2 list-disc pl-4">
+              <li>A chave deve ter acesso aos modelos <strong>Gemini 3.1 Pro</strong>.</li>
+              <li>Para geração de imagens, o projeto deve ter <strong>faturamento (billing)</strong> configurado.</li>
+              <li>Sua chave é salva apenas no seu navegador (localStorage).</li>
+            </ul>
+          </div>
           
           <p className="text-slate-500 text-xs">
-            Sua chave é usada apenas nesta sessão e não é armazenada por nós.
+            A Scala não armazena sua chave em servidores externos.
           </p>
         </div>
       </div>
     );
   }
+
+  const handleStartFromScratch = () => {
+    setOriginalImage(null);
+    setAnalysis({
+      visualStyle: 'Modern and clean',
+      creativeType: 'Single Image',
+      implicitAudience: 'General',
+      emotions: 'Professional',
+      visualStructure: 'Balanced',
+      keyElements: {
+        person: 'None',
+        object: 'None',
+        text: 'None',
+        background: 'Studio',
+        dominantColors: 'Neutral'
+      },
+      basePrompt: 'A high-quality professional advertisement background'
+    });
+    setStep('evolution');
+  };
 
   return (
     <div className="min-h-screen pb-32 bg-slate-950 text-slate-200">
@@ -209,17 +228,33 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            {step === 'upload' && <ImageUpload onUpload={onImageUpload} isLoading={isProcessing} />}
+            {step === 'upload' && (
+              <ImageUpload 
+                onUpload={onImageUpload} 
+                onStartFromScratch={handleStartFromScratch}
+                isLoading={isProcessing} 
+              />
+            )}
             {step === 'analysis' && analysis && <AnalysisView analysis={analysis} onContinue={() => setStep('evolution')} />}
             {step === 'evolution' && (
               <div className="space-y-12 animate-in fade-in duration-500">
                 <div className="flex items-center gap-6 max-w-4xl mx-auto border-b border-slate-800 pb-8">
-                  <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-700 shrink-0 shadow-2xl">
-                    <img src={originalImage!} className="w-full h-full object-cover" />
-                  </div>
+                  {originalImage ? (
+                    <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-700 shrink-0 shadow-2xl">
+                      <img src={originalImage} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 shadow-2xl">
+                      <svg className="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </div>
+                  )}
                   <div>
                     <h2 className="text-3xl font-bold">Estúdio de Escala</h2>
-                    <p className="text-slate-400">Gere múltiplos formatos e sequências estratégicas.</p>
+                    <p className="text-slate-400">
+                      {originalImage ? 'Gere múltiplos formatos e sequências estratégicas.' : 'Crie novos anúncios do zero usando IA.'}
+                    </p>
                   </div>
                 </div>
                 <EvolutionForm onGenerate={onGenerate} isGenerating={isProcessing} context={analysis?.basePrompt || ''} />

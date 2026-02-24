@@ -3,16 +3,17 @@ import React, { useRef, useState } from 'react';
 
 interface ImageUploadProps {
   onUpload: (base64: string) => void;
+  onStartFromScratch: () => void;
   isLoading: boolean;
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, isLoading }) => {
+const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, onStartFromScratch, isLoading }) => {
   const [preview, setPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const processFile = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
@@ -23,6 +24,29 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, isLoading }) => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isLoading) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (isLoading) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto p-8 glass-effect rounded-3xl border border-slate-700/50 text-center">
       <h2 className="text-2xl font-bold mb-2">Carregue seu Criativo</h2>
@@ -30,8 +54,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, isLoading }) => {
       
       <div 
         onClick={() => !isLoading && fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className={`relative group cursor-pointer border-2 border-dashed transition-all duration-300 rounded-2xl p-10 
-          ${preview ? 'border-indigo-500/50' : 'border-slate-700 hover:border-indigo-500/50'}
+          ${preview ? 'border-indigo-500/50' : isDragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-indigo-500/50'}
           ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
@@ -71,6 +98,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, isLoading }) => {
         <div className="mt-8 flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-indigo-400 font-medium animate-pulse">Analisando inteligência criativa...</p>
+        </div>
+      )}
+
+      {!isLoading && !preview && (
+        <div className="mt-10 pt-6 border-t border-slate-800/50">
+          <p className="text-slate-500 text-sm mb-4">Ou se preferir, comece sem uma imagem base</p>
+          <button 
+            onClick={onStartFromScratch}
+            className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold transition-all hover:scale-105 active:scale-95 border border-slate-700"
+          >
+            Iniciar Projeto do Zero
+          </button>
         </div>
       )}
     </div>

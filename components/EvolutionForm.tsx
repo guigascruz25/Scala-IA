@@ -113,7 +113,9 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, isGenerating,
   };
 
   const isCarousel = config.creativeType === CreativeType.CAROUSEL;
-  const totalItems = isCarousel ? config.carouselConfig!.cardCount * config.formats.length : config.count * config.formats.length;
+  const totalItems = isCarousel 
+    ? config.carouselConfig!.cardCount * config.formats.length 
+    : config.count * config.copies.length * config.formats.length;
 
   return (
     <div className="w-full max-w-4xl mx-auto glass-effect p-8 rounded-3xl border border-slate-700/50 space-y-12">

@@ -4,7 +4,8 @@ import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, Crea
 
 export class GeminiService {
   private static getAi() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const key = localStorage.getItem('user_gemini_key') || process.env.API_KEY || "";
+    return new GoogleGenAI({ apiKey: key });
   }
 
   private static async withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
@@ -55,12 +56,28 @@ export class GeminiService {
 
   private static async generateSingleImages(analysis: CreativeAnalysis, config: GenerationConfig, baseImageBase64?: string): Promise<GeneratedImage[]> {
     const results: GeneratedImage[] = [];
-    // Gerar 'count' variantes para cada par de copy
+    
+    // Gerar para cada cópia, para cada formato, o número de variantes solicitado
     for (let v = 0; v < config.count; v++) {
       for (let c = 0; c < config.copies.length; c++) {
         const copy = config.copies[c];
-        for (const format of config.formats) {
-          const res = await this.renderImage(analysis, config, format, copy.headline, copy.subHeadline, baseImageBase64);
+        for (let f = 0; f < config.formats.length; f++) {
+          const format = config.formats[f];
+          
+          // O seedOffset garante que cada variante (v) seja visualmente diferente das outras
+          const seedOffset = v * 100 + c * 10 + f;
+          
+          const res = await this.renderImage(
+            analysis, 
+            config, 
+            format, 
+            copy.headline, 
+            copy.subHeadline, 
+            baseImageBase64, 
+            undefined, 
+            undefined, 
+            seedOffset
+          );
           if (res) results.push(res);
         }
       }
@@ -111,14 +128,17 @@ export class GeminiService {
     subHeadline: string, 
     baseImg?: string,
     carouselInfo?: any,
-    specificAsset?: string
+    specificAsset?: string,
+    seedOffset?: number
   ): Promise<GeneratedImage | null> {
     return this.withRetry(async () => {
       const ai = this.getAi();
       const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
 
       let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-      PRIMARY OBJECTIVE: Create an high-performance conversion ad.
+      PRIMARY OBJECTIVE: Create a BRAND NEW high-performance conversion ad image.
+      
+      CRITICAL INSTRUCTION: DO NOT just edit the reference image. Create a NEW composition, a NEW scene, or a NEW angle inspired by the reference but visually distinct.
       
       TEXT OVERLAY (Portuguese): 
       - Headline: "${headline}"
@@ -126,29 +146,43 @@ export class GeminiService {
 
       ART DIRECTION INSTRUCTIONS: "${config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.'}"
 
-      ORIGINAL STYLE CONTEXT: ${analysis.visualStyle}. 
-      SCENE DESCRIPTION: ${analysis.basePrompt}.`;
+      STYLE REFERENCE: ${analysis.visualStyle}. 
+      SCENE CONTEXT: ${analysis.basePrompt}.
+      VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
       if (carouselInfo) {
-        prompt += `\n\nCAROUSEL SPECIFIC: Card ${carouselInfo.index} of ${carouselInfo.total}.`;
+        prompt += `\n\nCAROUSEL SPECIFIC: Card ${carouselInfo.index} of ${carouselInfo.total}. Ensure visual continuity with the rest of the sequence.`;
       }
 
       const parts: any[] = [];
+      
+      // Adicionar ativos específicos se houver
       if (specificAsset) {
         parts.push({ inlineData: { mimeType: 'image/png', data: specificAsset.split(',')[1] } });
       } else if (config.assetImages.length > 0) {
-        config.assetImages.forEach(img => parts.push({ inlineData: { mimeType: 'image/png', data: img.split(',')[1] } }));
+        // Se houver múltiplos ativos, pegar um baseado no seed para variar
+        const assetIndex = (seedOffset || 0) % config.assetImages.length;
+        parts.push({ inlineData: { mimeType: 'image/png', data: config.assetImages[assetIndex].split(',')[1] } });
       }
 
       if (config.logoImage) parts.push({ inlineData: { mimeType: 'image/png', data: config.logoImage.split(',')[1] } });
-      if (baseImg && config.assetImages.length === 0) parts.push({ inlineData: { mimeType: 'image/png', data: baseImg.split(',')[1] } });
+      
+      // A imagem base (referência) é enviada apenas como contexto visual, não como alvo de edição direta
+      if (baseImg && config.assetImages.length === 0) {
+        parts.push({ inlineData: { mimeType: 'image/png', data: baseImg.split(',')[1] } });
+      }
       
       parts.push({ text: prompt });
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-image-preview',
         contents: { parts },
-        config: { imageConfig: { aspectRatio: apiRatio as any, imageSize: config.size } }
+        config: { 
+          imageConfig: { 
+            aspectRatio: apiRatio as any, 
+            imageSize: config.size 
+          } 
+        }
       });
 
       const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
