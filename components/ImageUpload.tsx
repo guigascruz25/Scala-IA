@@ -58,7 +58,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, onStartFromScratch,
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`relative group cursor-pointer border-2 border-dashed transition-all duration-300 rounded-2xl p-10 
-          ${preview ? 'border-indigo-500/50' : isDragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-indigo-500/50'}
+          ${preview ? 'border-purple-500/50' : isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-slate-700 hover:border-purple-500/50'}
           ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
@@ -73,8 +73,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, onStartFromScratch,
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-indigo-900/40 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center group-hover:bg-purple-900/40 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
@@ -96,8 +96,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, onStartFromScratch,
 
       {isLoading && (
         <div className="mt-8 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-indigo-400 font-medium animate-pulse">Analisando inteligência criativa...</p>
+          <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-purple-400 font-medium animate-pulse">Analisando inteligência criativa...</p>
         </div>
       )}
 

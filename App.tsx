@@ -115,7 +115,7 @@ const App: React.FC = () => {
   };
 
   const onDownload = (url: string, id: string) => {
-    const a = document.createElement('a'); a.href = url; a.download = `scala-${id}.jpg`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `criativos-infinitos-${id}.jpg`; a.click();
   };
 
   if (!hasApiKey) {
@@ -124,14 +124,14 @@ const App: React.FC = () => {
         <Header onLogoClick={resetApp} />
         <div className="max-w-lg glass-effect p-10 rounded-3xl border border-slate-700/50 space-y-8">
           <div className="space-y-4">
-            <div className="w-20 h-20 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
               </svg>
             </div>
             <h2 className="text-3xl font-bold text-white">Conecte sua Inteligência</h2>
             <p className="text-slate-400 text-lg">
-              Para usar a tecnologia Scala, você precisa inserir sua própria API Key do Google Gemini.
+              Para usar a tecnologia Criativos Infinitos, você precisa inserir sua própria API Key do Google Gemini.
             </p>
           </div>
 
@@ -142,14 +142,14 @@ const App: React.FC = () => {
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="Insira sua Gemini API Key aqui..."
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
               />
             </div>
             
             <button 
               onClick={handleSaveKey}
               disabled={!apiKeyInput.trim()}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-indigo-600/20 active:scale-[0.98]"
+              className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-purple-600/20 active:scale-[0.98]"
             >
               Salvar Chave de API
             </button>
@@ -159,7 +159,7 @@ const App: React.FC = () => {
                 href="https://aistudio.google.com/app/apikey" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-indigo-400 hover:text-indigo-300 text-sm font-medium underline underline-offset-4"
+                className="text-purple-400 hover:text-purple-300 text-sm font-medium underline underline-offset-4"
               >
                 Onde gerar minha API Key?
               </a>
@@ -167,7 +167,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="bg-slate-900/50 p-6 rounded-2xl text-left space-y-3 border border-slate-800">
-            <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider">Requisitos:</h3>
+            <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Requisitos:</h3>
             <ul className="text-sm text-slate-300 space-y-2 list-disc pl-4">
               <li>A chave deve ter acesso aos modelos <strong>Gemini 3.1 Pro</strong>.</li>
               <li>Para geração de imagens, o projeto deve ter <strong>faturamento (billing)</strong> configurado.</li>
@@ -176,7 +176,7 @@ const App: React.FC = () => {
           </div>
           
           <p className="text-slate-500 text-xs">
-            A Scala não armazena sua chave em servidores externos.
+            O Criativos Infinitos não armazena sua chave em servidores externos.
           </p>
         </div>
       </div>
@@ -210,21 +210,21 @@ const App: React.FC = () => {
         {isProcessing ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-10 animate-in fade-in duration-700">
             <div className="relative">
-              <div className="w-24 h-24 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+              <div className="w-24 h-24 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-indigo-600/20 rounded-full animate-pulse"></div>
+                <div className="w-12 h-12 bg-purple-600/20 rounded-full animate-pulse"></div>
               </div>
             </div>
             <div className="text-center space-y-4 max-w-lg">
               <h2 className="text-3xl font-black text-white tracking-tight">Processando Inteligência...</h2>
-              <p className="text-indigo-400 font-medium text-lg animate-pulse">{processingMessage}</p>
+              <p className="text-purple-400 font-medium text-lg animate-pulse">{processingMessage}</p>
               <div className="flex justify-center gap-1.5 pt-4">
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce"></div>
               </div>
             </div>
-            <p className="text-slate-500 text-xs italic font-medium">A IA da Scala está pensando como um estrategista de performance.</p>
+            <p className="text-slate-500 text-xs italic font-medium">A IA do Criativos Infinitos está pensando como um estrategista de performance.</p>
           </div>
         ) : (
           <>

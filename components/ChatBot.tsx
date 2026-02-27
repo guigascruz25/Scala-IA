@@ -5,7 +5,7 @@ import { GeminiService } from '../services/geminiService.ts';
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([
-    { role: 'model', text: "Olá! Eu sou a Scala, sua assistente de inteligência criativa. Precisa de ajuda para refinar seu prompt ou analisar uma variação?" }
+    { role: 'model', text: "Olá! Eu sou o Criativos Infinitos, sua assistente de inteligência criativa. Precisa de ajuda para refinar seu prompt ou analisar uma variação?" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,12 +39,12 @@ const ChatBot: React.FC = () => {
     <div className="fixed bottom-8 right-8 z-[60]">
       {isOpen && (
         <div className="absolute bottom-20 right-0 w-96 h-[500px] glass-effect rounded-3xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
-          <div className="bg-indigo-600 p-4 flex justify-between items-center">
+          <div className="bg-purple-600 p-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-indigo-600 font-bold text-sm">S</span>
+                <span className="text-purple-600 font-bold text-sm">C</span>
               </div>
-              <h4 className="font-bold text-white">Assistente Scala</h4>
+              <h4 className="font-bold text-white">Assistente Criativos Infinitos</h4>
             </div>
             <button onClick={() => setIsOpen(false)} className="text-white hover:opacity-70 transition-opacity">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,7 +58,7 @@ const ChatBot: React.FC = () => {
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
                   m.role === 'user' 
-                    ? 'bg-indigo-600 text-white rounded-tr-none' 
+                    ? 'bg-purple-600 text-white rounded-tr-none' 
                     : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700'
                 }`}>
                   {m.text}
@@ -82,15 +82,15 @@ const ChatBot: React.FC = () => {
             <div className="flex gap-2">
               <input 
                 type="text"
-                placeholder="Pergunte qualquer coisa à Scala..."
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500"
+                placeholder="Pergunte qualquer coisa ao Criativos Infinitos..."
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:ring-2 focus:ring-purple-500"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
               <button 
                 onClick={handleSend}
-                className="p-2 bg-indigo-600 rounded-xl text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="p-2 bg-purple-600 rounded-xl text-white hover:bg-purple-700 transition-colors disabled:opacity-50"
                 disabled={isLoading}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,7 +104,7 @@ const ChatBot: React.FC = () => {
 
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group"
+        className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group"
       >
         <div className="relative">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white transition-transform group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">

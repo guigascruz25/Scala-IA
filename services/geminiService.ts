@@ -224,7 +224,7 @@ export class GeminiService {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })), { role: 'user', parts: [{ text: message }] }],
-      config: { systemInstruction: "Você é a Scala. Auxilie no marketing digital." }
+      config: { systemInstruction: "Você é o Criativos Infinitos. Auxilie no marketing digital." }
     });
     return response.text || "";
   }

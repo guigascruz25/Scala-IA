@@ -22,7 +22,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, onContinue }) => 
     <div className="w-full max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-effect p-6 rounded-2xl border border-slate-700/50">
-          <h3 className="text-lg font-bold text-indigo-400 mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-purple-400 mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
@@ -49,7 +49,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, onContinue }) => 
         </div>
 
         <div className="glass-effect p-6 rounded-2xl border border-slate-700/50">
-          <h3 className="text-lg font-bold text-indigo-400 mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-purple-400 mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
             </svg>
@@ -78,9 +78,9 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, onContinue }) => 
         </div>
       </div>
 
-      <div className="glass-effect p-8 rounded-2xl border border-indigo-500/20 bg-indigo-900/10">
+      <div className="glass-effect p-8 rounded-2xl border border-purple-500/20 bg-purple-900/10">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
           Prompt Base (IA)
@@ -91,7 +91,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, onContinue }) => 
         <div className="mt-8 flex justify-end">
           <button 
             onClick={onContinue}
-            className="group flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-xl shadow-indigo-600/20"
+            className="group flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-xl shadow-purple-600/20"
           >
             Iniciar Evolução
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
