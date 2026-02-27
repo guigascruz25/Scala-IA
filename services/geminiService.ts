@@ -136,9 +136,9 @@ export class GeminiService {
       const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
 
       let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-      PRIMARY OBJECTIVE: Create a BRAND NEW high-performance conversion ad image.
+      PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY.
       
-      CRITICAL INSTRUCTION: DO NOT just edit the reference image. Create a NEW composition, a NEW scene, or a NEW angle inspired by the reference but visually distinct.
+      CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity.
       
       TEXT OVERLAY (Portuguese): 
       - Headline: "${headline}"
@@ -175,12 +175,12 @@ export class GeminiService {
       parts.push({ text: prompt });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-3.1-flash-image-preview',
         contents: { parts },
         config: { 
           imageConfig: { 
             aspectRatio: apiRatio as any, 
-            imageSize: config.size 
+            imageSize: "4K" // Forçar alta resolução para fidelidade máxima
           } 
         }
       });
