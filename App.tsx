@@ -54,6 +54,13 @@ const App: React.FC = () => {
   };
 
   const onImageUpload = async (base64: string) => {
+    const savedKey = localStorage.getItem('user_gemini_key');
+    if (!savedKey) {
+      setHasApiKey(false);
+      alert("Sua chave de API não foi encontrada. Por favor, insira-a novamente.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessingMessage('Iniciando análise de inteligência criativa...');
     try {
@@ -64,12 +71,26 @@ const App: React.FC = () => {
       setStep('analysis');
     } catch (e: any) { 
       console.error("Erro na análise:", e);
-      alert(`A análise falhou: ${e.message || "Erro desconhecido"}. Verifique se sua chave tem acesso ao Gemini 3.1 Pro.`); 
+      const errorMsg = e.message || "";
+      if (errorMsg.includes("API_KEY_INVALID") || errorMsg.includes("invalid")) {
+        alert("Chave de API inválida. Por favor, verifique a chave inserida.");
+        setHasApiKey(false);
+      } else {
+        alert(`A análise falhou: ${e.message || "Erro de conexão"}. Certifique-se de que sua chave tem acesso ao Gemini 3.1.`);
+      }
     } finally { setIsProcessing(false); }
   };
 
   const onGenerate = async (config: GenerationConfig) => {
     if (!analysis) return;
+    
+    const savedKey = localStorage.getItem('user_gemini_key');
+    if (!savedKey) {
+      setHasApiKey(false);
+      alert("Sessão expirada ou chave ausente. Por favor, reconecte sua chave.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessingMessage('Escalando ativos: Planejando narrativa e renderizando criativos...');
     
