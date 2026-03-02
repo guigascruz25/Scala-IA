@@ -63,7 +63,8 @@ const App: React.FC = () => {
       setAnalysis(result);
       setStep('analysis');
     } catch (e: any) { 
-      alert("Análise falhou. Verifique sua conexão ou chave de API."); 
+      console.error("Erro na análise:", e);
+      alert(`A análise falhou: ${e.message || "Erro desconhecido"}. Verifique se sua chave tem acesso ao Gemini 3.1 Pro.`); 
     } finally { setIsProcessing(false); }
   };
 
@@ -103,7 +104,8 @@ const App: React.FC = () => {
         alert("A IA não retornou imagens. Tente ajustar o prompt ou ativos.");
       }
     } catch (e: any) { 
-      alert("Erro na geração. Detalhes: " + (e.message || "Erro desconhecido")); 
+      console.error("Erro na geração:", e);
+      alert(`Erro na geração: ${e.message || "Erro desconhecido"}. Verifique se sua chave possui faturamento (billing) ativo para geração de imagens.`); 
     } finally { 
       clearInterval(interval);
       setIsProcessing(false); 

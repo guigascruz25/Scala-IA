@@ -21,17 +21,23 @@ export class GeminiService {
     }
   }
 
+  private static getMimeType(base64: string): string {
+    const match = base64.match(/^data:(image\/[a-zA-Z]+);base64,/);
+    return match ? match[1] : 'image/png';
+  }
+
   static async analyzeImage(base64Image: string): Promise<CreativeAnalysis> {
     return this.withRetry(async () => {
       const ai = this.getAi();
       const prompt = `Analise este criativo publicitário. Forneça uma resposta JSON onde TODOS os valores dos campos sejam STRINGS simples.
       Campos: visualStyle, creativeType, implicitAudience, emotions, visualStructure, keyElements { person, object, text, background, dominantColors }, basePrompt (técnico em inglês).`;
 
+      const mimeType = this.getMimeType(base64Image);
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: { 
           parts: [
-            { inlineData: { mimeType: 'image/png', data: base64Image.split(',')[1] } }, 
+            { inlineData: { mimeType, data: base64Image.split(',')[1] } }, 
             { text: prompt }
           ] 
         },
@@ -156,47 +162,75 @@ export class GeminiService {
 
       const parts: any[] = [];
       
-      // Adicionar ativos específicos se houver
       if (specificAsset) {
-        parts.push({ inlineData: { mimeType: 'image/png', data: specificAsset.split(',')[1] } });
+        parts.push({ inlineData: { mimeType: this.getMimeType(specificAsset), data: specificAsset.split(',')[1] } });
       } else if (config.assetImages.length > 0) {
-        // Se houver múltiplos ativos, pegar um baseado no seed para variar
         const assetIndex = (seedOffset || 0) % config.assetImages.length;
-        parts.push({ inlineData: { mimeType: 'image/png', data: config.assetImages[assetIndex].split(',')[1] } });
+        const asset = config.assetImages[assetIndex];
+        parts.push({ inlineData: { mimeType: this.getMimeType(asset), data: asset.split(',')[1] } });
       }
 
-      if (config.logoImage) parts.push({ inlineData: { mimeType: 'image/png', data: config.logoImage.split(',')[1] } });
+      if (config.logoImage) {
+        parts.push({ inlineData: { mimeType: this.getMimeType(config.logoImage), data: config.logoImage.split(',')[1] } });
+      }
       
-      // A imagem base (referência) é enviada apenas como contexto visual, não como alvo de edição direta
       if (baseImg && config.assetImages.length === 0) {
-        parts.push({ inlineData: { mimeType: 'image/png', data: baseImg.split(',')[1] } });
+        parts.push({ inlineData: { mimeType: this.getMimeType(baseImg), data: baseImg.split(',')[1] } });
       }
       
       parts.push({ text: prompt });
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
-        contents: { parts },
-        config: { 
-          imageConfig: { 
-            aspectRatio: apiRatio as any, 
-            imageSize: "4K" // Forçar alta resolução para fidelidade máxima
-          } 
-        }
-      });
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-image-preview',
+          contents: { parts },
+          config: { 
+            imageConfig: { 
+              aspectRatio: apiRatio as any, 
+              imageSize: "4K" 
+            } 
+          }
+        });
 
-      const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
-      if (imgPart?.inlineData?.data) {
-        return {
-          id: `img-${Date.now()}-${Math.random()}`,
-          url: `data:image/png;base64,${imgPart.inlineData.data}`,
-          prompt,
-          aspectRatio: format.ratio,
-          dimensions: format.width ? { w: format.width, h: format.height } : undefined,
-          label: format.label,
-          timestamp: Date.now(),
-          carouselInfo
-        };
+        const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
+        if (imgPart?.inlineData?.data) {
+          return {
+            id: `img-${Date.now()}-${Math.random()}`,
+            url: `data:image/png;base64,${imgPart.inlineData.data}`,
+            prompt,
+            aspectRatio: format.ratio,
+            dimensions: format.width ? { w: format.width, h: format.height } : undefined,
+            label: format.label,
+            timestamp: Date.now(),
+            carouselInfo
+          };
+        }
+      } catch (error: any) {
+        console.warn("Falha no modelo 3.1, tentando fallback para 3.0 Pro:", error);
+        const response = await ai.models.generateContent({
+          model: 'gemini-3-pro-image-preview',
+          contents: { parts },
+          config: { 
+            imageConfig: { 
+              aspectRatio: apiRatio as any, 
+              imageSize: "1K" 
+            } 
+          }
+        });
+
+        const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
+        if (imgPart?.inlineData?.data) {
+          return {
+            id: `img-${Date.now()}-${Math.random()}`,
+            url: `data:image/png;base64,${imgPart.inlineData.data}`,
+            prompt,
+            aspectRatio: format.ratio,
+            dimensions: format.width ? { w: format.width, h: format.height } : undefined,
+            label: format.label,
+            timestamp: Date.now(),
+            carouselInfo
+          };
+        }
       }
       return null;
     });
