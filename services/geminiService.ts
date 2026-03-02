@@ -3,6 +3,20 @@ import { GoogleGenAI } from "@google/genai";
 import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, CreativeType, CarouselGoal, CarouselStyle, AspectRatio } from "../types.ts";
 
 export class GeminiService {
+  private static modelSwitchCallback: ((message: string) => void) | null = null;
+
+  static setOnModelSwitch(callback: (message: string) => void) {
+    this.modelSwitchCallback = callback;
+  }
+
+  private static notifyModelSwitch() {
+    if (this.modelSwitchCallback) {
+      this.modelSwitchCallback(
+        "⚠️ This analysis is taking a little longer than usual due to high demand. To optimize your time and deliver the best possible result, we are automatically switching to a faster AI model."
+      );
+    }
+  }
+
   private static getAi() {
     const key = localStorage.getItem('user_gemini_key') || process.env.API_KEY || "";
     return new GoogleGenAI({ apiKey: key });
@@ -27,25 +41,41 @@ export class GeminiService {
   }
 
   static async analyzeImage(base64Image: string): Promise<CreativeAnalysis> {
-    return this.withRetry(async () => {
-      const ai = this.getAi();
-      const prompt = `Analise este criativo publicitário. Forneça uma resposta JSON onde TODOS os valores dos campos sejam STRINGS simples.
-      Campos: visualStyle, creativeType, implicitAudience, emotions, visualStructure, keyElements { person, object, text, background, dominantColors }, basePrompt (técnico em inglês).`;
+    const models = ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview'];
+    let lastError: any = null;
 
-      const mimeType = this.getMimeType(base64Image);
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: { 
-          parts: [
-            { inlineData: { mimeType, data: base64Image.split(',')[1] } }, 
-            { text: prompt }
-          ] 
-        },
-        config: { responseMimeType: "application/json" }
-      });
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
+      try {
+        if (i > 0) this.notifyModelSwitch();
 
-      return JSON.parse(response.text || '{}') as CreativeAnalysis;
-    });
+        return await this.withRetry(async () => {
+          const ai = this.getAi();
+          const prompt = `Analise este criativo publicitário. Forneça uma resposta JSON onde TODOS os valores dos campos sejam STRINGS simples.
+          Campos: visualStyle, creativeType, implicitAudience, emotions, visualStructure, keyElements { person, object, text, background, dominantColors }, basePrompt (técnico em inglês).`;
+
+          const mimeType = this.getMimeType(base64Image);
+          const response = await ai.models.generateContent({
+            model: model,
+            contents: { 
+              parts: [
+                { inlineData: { mimeType, data: base64Image.split(',')[1] } }, 
+                { text: prompt }
+              ] 
+            },
+            config: { responseMimeType: "application/json" }
+          });
+
+          return JSON.parse(response.text || '{}') as CreativeAnalysis;
+        }, i === 0 ? 2 : 1); // Fewer retries for primary to fail faster and switch
+      } catch (error: any) {
+        lastError = error;
+        console.warn(`Falha no modelo ${model}:`, error);
+        // Continue to next model
+      }
+    }
+
+    throw lastError || new Error("Todos os modelos de análise falharam.");
   }
 
   static async generateVariations(
@@ -137,103 +167,89 @@ export class GeminiService {
     specificAsset?: string,
     seedOffset?: number
   ): Promise<GeneratedImage | null> {
-    return this.withRetry(async () => {
-      const ai = this.getAi();
-      const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
+    const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    let lastError: any = null;
 
-      let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-      PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY.
-      
-      CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity.
-      
-      TEXT OVERLAY (Portuguese): 
-      - Headline: "${headline}"
-      - Sub-headline: "${subHeadline}"
+    const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
+    let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
+    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY.
+    
+    CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity.
+    
+    TEXT OVERLAY (Portuguese): 
+    - Headline: "${headline}"
+    - Sub-headline: "${subHeadline}"
 
-      ART DIRECTION INSTRUCTIONS: "${config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.'}"
+    ART DIRECTION INSTRUCTIONS: "${config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.'}"
 
-      STYLE REFERENCE: ${analysis.visualStyle}. 
-      SCENE CONTEXT: ${analysis.basePrompt}.
-      VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
+    STYLE REFERENCE: ${analysis.visualStyle}. 
+    SCENE CONTEXT: ${analysis.basePrompt}.
+    VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
-      if (carouselInfo) {
-        prompt += `\n\nCAROUSEL SPECIFIC: Card ${carouselInfo.index} of ${carouselInfo.total}. Ensure visual continuity with the rest of the sequence.`;
-      }
+    if (carouselInfo) {
+      prompt += `\n\nCAROUSEL SPECIFIC: Card ${carouselInfo.index} of ${carouselInfo.total}. Ensure visual continuity with the rest of the sequence.`;
+    }
 
-      const parts: any[] = [];
-      
-      if (specificAsset) {
-        parts.push({ inlineData: { mimeType: this.getMimeType(specificAsset), data: specificAsset.split(',')[1] } });
-      } else if (config.assetImages.length > 0) {
-        const assetIndex = (seedOffset || 0) % config.assetImages.length;
-        const asset = config.assetImages[assetIndex];
-        parts.push({ inlineData: { mimeType: this.getMimeType(asset), data: asset.split(',')[1] } });
-      }
+    const parts: any[] = [];
+    
+    if (specificAsset) {
+      parts.push({ inlineData: { mimeType: this.getMimeType(specificAsset), data: specificAsset.split(',')[1] } });
+    } else if (config.assetImages.length > 0) {
+      const assetIndex = (seedOffset || 0) % config.assetImages.length;
+      const asset = config.assetImages[assetIndex];
+      parts.push({ inlineData: { mimeType: this.getMimeType(asset), data: asset.split(',')[1] } });
+    }
 
-      if (config.logoImage) {
-        parts.push({ inlineData: { mimeType: this.getMimeType(config.logoImage), data: config.logoImage.split(',')[1] } });
-      }
-      
-      if (baseImg && config.assetImages.length === 0) {
-        parts.push({ inlineData: { mimeType: this.getMimeType(baseImg), data: baseImg.split(',')[1] } });
-      }
-      
-      parts.push({ text: prompt });
+    if (config.logoImage) {
+      parts.push({ inlineData: { mimeType: this.getMimeType(config.logoImage), data: config.logoImage.split(',')[1] } });
+    }
+    
+    if (baseImg && config.assetImages.length === 0) {
+      parts.push({ inlineData: { mimeType: this.getMimeType(baseImg), data: baseImg.split(',')[1] } });
+    }
+    
+    parts.push({ text: prompt });
 
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
       try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.1-flash-image-preview',
-          contents: { parts },
-          config: { 
-            imageConfig: { 
-              aspectRatio: apiRatio as any, 
-              imageSize: "4K" 
-            } 
-          }
-        });
+        if (i > 0) this.notifyModelSwitch();
 
-        const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
-        if (imgPart?.inlineData?.data) {
-          return {
-            id: `img-${Date.now()}-${Math.random()}`,
-            url: `data:image/png;base64,${imgPart.inlineData.data}`,
-            prompt,
-            aspectRatio: format.ratio,
-            dimensions: format.width ? { w: format.width, h: format.height } : undefined,
-            label: format.label,
-            timestamp: Date.now(),
-            carouselInfo
-          };
-        }
+        return await this.withRetry(async () => {
+          const ai = this.getAi();
+          const response = await ai.models.generateContent({
+            model: model,
+            contents: { parts },
+            config: { 
+              imageConfig: { 
+                aspectRatio: apiRatio as any, 
+                imageSize: i === 0 ? "4K" : "1K" 
+              } 
+            }
+          });
+
+          const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
+          if (imgPart?.inlineData?.data) {
+            return {
+              id: `img-${Date.now()}-${Math.random()}`,
+              url: `data:image/png;base64,${imgPart.inlineData.data}`,
+              prompt,
+              aspectRatio: format.ratio,
+              dimensions: format.width ? { w: format.width, h: format.height } : undefined,
+              label: format.label,
+              timestamp: Date.now(),
+              carouselInfo
+            };
+          }
+          return null;
+        }, i === 0 ? 2 : 1);
       } catch (error: any) {
-        console.warn("Falha no modelo 3.1, tentando fallback para 3.0 Pro:", error);
-        const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-image-preview',
-          contents: { parts },
-          config: { 
-            imageConfig: { 
-              aspectRatio: apiRatio as any, 
-              imageSize: "1K" 
-            } 
-          }
-        });
-
-        const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
-        if (imgPart?.inlineData?.data) {
-          return {
-            id: `img-${Date.now()}-${Math.random()}`,
-            url: `data:image/png;base64,${imgPart.inlineData.data}`,
-            prompt,
-            aspectRatio: format.ratio,
-            dimensions: format.width ? { w: format.width, h: format.height } : undefined,
-            label: format.label,
-            timestamp: Date.now(),
-            carouselInfo
-          };
-        }
+        lastError = error;
+        console.warn(`Falha no modelo de imagem ${model}:`, error);
       }
-      return null;
-    });
+    }
+
+    throw lastError || new Error("Todos os modelos de imagem falharam.");
   }
 
   static async quickEdit(base64Image: string, prompt: string): Promise<string | null> {

@@ -32,9 +32,18 @@ const App: React.FC = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
+  const [switchMessage, setSwitchMessage] = useState<string | null>(null);
   
   const [hasApiKey, setHasApiKey] = useState(() => !!localStorage.getItem('user_gemini_key'));
   const [apiKeyInput, setApiKeyInput] = useState('');
+
+  useEffect(() => {
+    GeminiService.setOnModelSwitch((message) => {
+      setSwitchMessage(message);
+      // Clear switch message after 8 seconds
+      setTimeout(() => setSwitchMessage(null), 8000);
+    });
+  }, []);
 
   const handleSaveKey = () => {
     if (apiKeyInput.trim()) {
@@ -51,6 +60,7 @@ const App: React.FC = () => {
     setAnalysis(null);
     setGeneratedImages([]);
     setIsProcessing(false);
+    setSwitchMessage(null);
   };
 
   const onImageUpload = async (base64: string) => {
@@ -241,6 +251,15 @@ const App: React.FC = () => {
             <div className="text-center space-y-4 max-w-lg">
               <h2 className="text-3xl font-black text-white tracking-tight">Processando Inteligência...</h2>
               <p className="text-purple-400 font-medium text-lg animate-pulse">{processingMessage}</p>
+              
+              {switchMessage && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl animate-in fade-in slide-in-from-top-2 duration-500">
+                  <p className="text-amber-400 text-sm font-medium leading-relaxed">
+                    {switchMessage}
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-center gap-1.5 pt-4">
                 <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                 <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
