@@ -12,7 +12,7 @@ export class GeminiService {
   private static notifyModelSwitch() {
     if (this.modelSwitchCallback) {
       this.modelSwitchCallback(
-        "⚠️ This analysis is taking a little longer than usual due to high demand. To optimize your time and deliver the best possible result, we are automatically switching to a faster AI model."
+        "⚠️ Esta análise está demorando um pouco mais do que o normal devido à alta demanda. Para otimizar seu tempo e entregar o melhor resultado possível, estamos alternando automaticamente para um modelo de IA mais rápido."
       );
     }
   }

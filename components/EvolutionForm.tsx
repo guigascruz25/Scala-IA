@@ -151,13 +151,13 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, isGenerating,
               ))}
               <button onClick={() => assetInputRef.current?.click()} className="w-24 h-24 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-purple-500 hover:bg-purple-900/10 transition-all text-slate-500 hover:text-purple-400">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                <span className="text-[10px] font-bold">Add</span>
+                <span className="text-[10px] font-bold">Adicionar</span>
               </button>
             </div>
             <input type="file" ref={assetInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'asset')} />
           </div>
           <div onClick={() => logoInputRef.current?.click()} className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center gap-2 ${config.logoImage ? 'border-purple-500 bg-purple-900/10' : 'border-slate-700 bg-slate-900/50'}`}>
-            {config.logoImage ? <img src={config.logoImage} className="h-20 object-contain" /> : <p className="text-slate-500 text-xs">Upload Logo</p>}
+            {config.logoImage ? <img src={config.logoImage} className="h-20 object-contain" /> : <p className="text-slate-500 text-xs">Carregar Logo</p>}
           </div>
           <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
         </div>

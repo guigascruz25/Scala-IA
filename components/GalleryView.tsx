@@ -99,7 +99,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
                     <span className="text-xs font-bold uppercase tracking-widest text-purple-400 bg-purple-500/10 px-2 py-1 rounded">{img.dimensions ? `${img.dimensions.w}x${img.dimensions.h}` : img.aspectRatio}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    <button onClick={() => onDownload(img.url, img.id)} className="bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-xs font-bold transition-all text-white">Download</button>
+                    <button onClick={() => onDownload(img.url, img.id)} className="bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-xs font-bold transition-all text-white">Baixar</button>
                     <button onClick={() => navigator.clipboard.writeText(img.prompt)} className="bg-purple-600 hover:bg-purple-700 py-3 rounded-xl text-xs font-bold transition-all text-white">Prompt</button>
                   </div>
                 </div>
