@@ -40,6 +40,35 @@ export class GeminiService {
     return match ? match[1] : 'image/png';
   }
 
+  private static async optimizeImageSize(base64Str: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(base64Str);
+        
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        let quality = 0.95;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        
+        // 10MB limit in base64 is roughly 13.3MB string length. We use 13,000,000 as a safe threshold.
+        while (dataUrl.length > 13000000 && quality > 0.5) {
+          quality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(base64Str);
+      img.src = base64Str;
+    });
+  }
+
   static async analyzeImage(base64Image: string): Promise<CreativeAnalysis> {
     const models = ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview'];
     let lastError: any = null;
@@ -230,9 +259,11 @@ export class GeminiService {
 
           const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
           if (imgPart?.inlineData?.data) {
+            const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+            const optimizedUrl = await this.optimizeImageSize(rawUrl);
             return {
               id: `img-${Date.now()}-${Math.random()}`,
-              url: `data:image/png;base64,${imgPart.inlineData.data}`,
+              url: optimizedUrl,
               prompt,
               aspectRatio: format.ratio,
               dimensions: format.width ? { w: format.width, h: format.height } : undefined,
@@ -265,7 +296,11 @@ export class GeminiService {
         }
       });
       const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
-      return imgPart?.inlineData?.data ? `data:image/png;base64,${imgPart.inlineData.data}` : null;
+      if (imgPart?.inlineData?.data) {
+        const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+        return await this.optimizeImageSize(rawUrl);
+      }
+      return null;
     });
   }
 
