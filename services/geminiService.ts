@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, CreativeType, CarouselGoal, CarouselStyle, AspectRatio } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
@@ -112,11 +112,7 @@ export class GeminiService {
     config: GenerationConfig,
     baseImageBase64?: string
   ): Promise<GeneratedImage[]> {
-    if (config.creativeType === CreativeType.SINGLE) {
-      return this.generateSingleImages(analysis, config, baseImageBase64);
-    } else {
-      return this.generateCarouselSequence(analysis, config, baseImageBase64);
-    }
+    return this.generateSingleImages(analysis, config, baseImageBase64);
   }
 
   private static async generateSingleImages(analysis: CreativeAnalysis, config: GenerationConfig, baseImageBase64?: string): Promise<GeneratedImage[]> {
@@ -140,46 +136,10 @@ export class GeminiService {
             copy.subHeadline, 
             baseImageBase64, 
             undefined, 
-            undefined, 
             seedOffset
           );
           if (res) results.push(res);
         }
-      }
-    }
-    return results;
-  }
-
-  private static async generateCarouselSequence(analysis: CreativeAnalysis, config: GenerationConfig, baseImageBase64?: string): Promise<GeneratedImage[]> {
-    const ai = this.getAi();
-    const carousel = config.carouselConfig!;
-    const groupId = `carousel-${Date.now()}`;
-    
-    let cards = carousel.perCardContent || [];
-    if (carousel.contentOption === 'CENTRAL_IDEA' && carousel.centralIdea) {
-      const planPrompt = `Crie um roteiro de carrossel com ${carousel.cardCount} cards sobre: "${carousel.centralIdea}". 
-      Objetivo: ${carousel.goal}. 
-      Retorne um JSON: cards: [{headline: string, subHeadline: string}].`;
-      
-      const planRes = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: planPrompt,
-        config: { responseMimeType: "application/json" }
-      });
-      cards = JSON.parse(planRes.text || '{"cards":[]}').cards;
-    }
-
-    const results: GeneratedImage[] = [];
-    for (const format of config.formats) {
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i];
-        const specificAsset = config.assetImages.length > 0 ? config.assetImages[i % config.assetImages.length] : undefined;
-        const res = await this.renderImage(analysis, config, format, card.headline, card.subHeadline || '', baseImageBase64, {
-          index: i + 1,
-          total: cards.length,
-          groupId
-        }, specificAsset);
-        if (res) results.push(res);
       }
     }
     return results;
@@ -192,7 +152,6 @@ export class GeminiService {
     headline: string, 
     subHeadline: string, 
     baseImg?: string,
-    carouselInfo?: any,
     specificAsset?: string,
     seedOffset?: number
   ): Promise<GeneratedImage | null> {
@@ -214,10 +173,6 @@ export class GeminiService {
     STYLE REFERENCE: ${analysis.visualStyle}. 
     SCENE CONTEXT: ${analysis.basePrompt}.
     VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
-
-    if (carouselInfo) {
-      prompt += `\n\nCAROUSEL SPECIFIC: Card ${carouselInfo.index} of ${carouselInfo.total}. Ensure visual continuity with the rest of the sequence.`;
-    }
 
     const parts: any[] = [];
     
@@ -268,8 +223,7 @@ export class GeminiService {
               aspectRatio: format.ratio,
               dimensions: format.width ? { w: format.width, h: format.height } : undefined,
               label: format.label,
-              timestamp: Date.now(),
-              carouselInfo
+              timestamp: Date.now()
             };
           }
           return null;

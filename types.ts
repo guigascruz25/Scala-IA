@@ -5,40 +5,6 @@ export enum EvolutionType {
   REPLICATE_WITH_CHANGES = 'REPLICATE_WITH_CHANGES'
 }
 
-export enum CreativeType {
-  SINGLE = 'SINGLE',
-  CAROUSEL = 'CAROUSEL'
-}
-
-export enum CarouselGoal {
-  EDUCATE = 'EDUCATE',
-  STORYTELLING = 'STORYTELLING',
-  AUTHORITY = 'AUTHORITY',
-  OFFER = 'OFFER',
-  DIRECT_CONVERSION = 'DIRECT_CONVERSION'
-}
-
-export enum CarouselStyle {
-  CONSISTENT = 'CONSISTENT',
-  ALTERNATING = 'ALTERNATING',
-  EVOLUTIONARY = 'EVOLUTIONARY'
-}
-
-export interface CarouselConfig {
-  cardCount: number;
-  goal: CarouselGoal;
-  style: CarouselStyle;
-  contentOption: 'CENTRAL_IDEA' | 'PER_CARD';
-  centralIdea?: string;
-  perCardContent?: { headline: string; subHeadline?: string }[];
-  optimizations: {
-    retention: boolean;
-    cta: boolean;
-    balance: boolean;
-    adaptation: boolean;
-  };
-}
-
 export interface CreativeAnalysis {
   visualStyle: string;
   creativeType: string;
@@ -73,8 +39,6 @@ export interface RequestedFormat {
 
 export interface GenerationConfig {
   evolutionType: EvolutionType;
-  creativeType: CreativeType;
-  carouselConfig?: CarouselConfig;
   modifications?: {
     person?: string;
     scenario?: string;
@@ -99,9 +63,4 @@ export interface GeneratedImage {
   aspectRatio: AspectRatio;
   dimensions?: { w: number; h: number };
   label: string;
-  carouselInfo?: {
-    index: number;
-    total: number;
-    groupId: string;
-  };
 }
