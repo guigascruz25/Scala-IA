@@ -53,6 +53,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDisconnectKey = () => {
+    localStorage.removeItem('user_gemini_key');
+    setHasApiKey(false);
+    setApiKeyInput('');
+    window.location.reload();
+  };
+
   const resetApp = () => {
     if (isProcessing) return;
     setStep('upload');
@@ -238,7 +245,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-32 bg-slate-950 text-slate-200">
-      <Header onLogoClick={resetApp} />
+      <Header onLogoClick={resetApp} onDisconnectKey={handleDisconnectKey} />
       <main className="px-6 max-w-7xl mx-auto">
         {isProcessing ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-10 animate-in fade-in duration-700">
