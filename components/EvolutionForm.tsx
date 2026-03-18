@@ -210,7 +210,64 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               />
             </section>
 
-            {/* 04 - Formatos & Configs Finais */}
+            {/* 04 - Textos do Anúncio (Headlines) */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Textos do Anúncio (Headlines)
+                </h3>
+                <button 
+                  onClick={addCopy}
+                  className="text-[10px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300 transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Adicionar Variante
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {config.copies.map((copy, idx) => (
+                  <div key={idx} className="relative group bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    {config.copies.length > 1 && (
+                      <button 
+                        onClick={() => removeCopy(idx)}
+                        className="absolute -top-2 -right-2 bg-red-500/80 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                      >
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Headline #{idx + 1}</label>
+                      <input 
+                        type="text"
+                        value={copy.headline}
+                        onChange={e => updateCopy(idx, 'headline', e.target.value)}
+                        placeholder="Ex: Transforme seu negócio com IA"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Subheadline #{idx + 1}</label>
+                      <input 
+                        type="text"
+                        value={copy.subHeadline}
+                        onChange={e => updateCopy(idx, 'subHeadline', e.target.value)}
+                        placeholder="Ex: Aumente sua produtividade em até 10x"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 05 - Formatos & Configs Finais */}
             <section className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
