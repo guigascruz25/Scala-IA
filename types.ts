@@ -5,6 +5,22 @@ export enum EvolutionType {
   REPLICATE_WITH_CHANGES = 'REPLICATE_WITH_CHANGES'
 }
 
+export enum PhotoGenerationMode {
+  FROM_SCRATCH = 'FROM_SCRATCH',
+  COMBINE = 'COMBINE',
+  REFERENCE = 'REFERENCE'
+}
+
+export interface PhotoGenerationConfig {
+  mode: PhotoGenerationMode;
+  context: string;
+  artisticStyle: string;
+  corporateStyle?: string;
+  genreTheme?: string;
+  moodTone?: string;
+  images: string[];
+}
+
 export interface CreativeAnalysis {
   visualStyle: string;
   creativeType: string;

@@ -7,7 +7,7 @@ import EvolutionForm from './components/EvolutionForm.tsx';
 import GalleryView from './components/GalleryView.tsx';
 import ChatBot from './components/ChatBot.tsx';
 import { GeminiService } from './services/geminiService.ts';
-import { CreativeAnalysis, GeneratedImage, GenerationConfig } from './types.ts';
+import { CreativeAnalysis, GeneratedImage, GenerationConfig, PhotoGenerationConfig } from './types.ts';
 
 const compressImage = (base64Str: string, maxWidth = 1024, maxHeight = 1024, quality = 0.8): Promise<string> => {
   return new Promise((resolve) => {
@@ -146,6 +146,35 @@ const App: React.FC = () => {
       alert(`Erro na geração: ${e.message || "Erro desconhecido"}. Verifique se sua chave possui faturamento (billing) ativo para geração de imagens.`); 
     } finally { 
       clearInterval(interval);
+      setIsProcessing(false); 
+    }
+  };
+
+  const onGeneratePhoto = async (config: PhotoGenerationConfig) => {
+    const savedKey = localStorage.getItem('user_gemini_key');
+    if (!savedKey) {
+      setHasApiKey(false);
+      alert("Sessão expirada ou chave ausente. Por favor, reconecte sua chave.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingMessage('Gerando sua foto personalizada com Imagen 3.0...');
+    
+    try {
+      const compressedImages = await Promise.all(config.images.map(img => compressImage(img)));
+      const result = await GeminiService.generatePhoto({ ...config, images: compressedImages });
+      
+      if (result) {
+        setGeneratedImages([result]);
+        setStep('results');
+      } else {
+        alert("A IA não retornou a imagem. Tente ajustar o contexto ou estilos.");
+      }
+    } catch (e: any) { 
+      console.error("Erro na geração da foto:", e);
+      alert(`Erro na geração: ${e.message || "Erro desconhecido"}. Verifique se sua chave possui faturamento (billing) ativo.`); 
+    } finally { 
       setIsProcessing(false); 
     }
   };
@@ -306,7 +335,7 @@ const App: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <EvolutionForm onGenerate={onGenerate} isGenerating={isProcessing} context={analysis?.basePrompt || ''} />
+                <EvolutionForm onGenerate={onGenerate} onGeneratePhoto={onGeneratePhoto} isGenerating={isProcessing} context={analysis?.basePrompt || ''} />
               </div>
             )}
             {step === 'results' && (

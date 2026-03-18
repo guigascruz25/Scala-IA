@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
@@ -235,6 +235,71 @@ export class GeminiService {
     }
 
     throw lastError || new Error("Todos os modelos de imagem falharam.");
+  }
+
+  static async generatePhoto(config: PhotoGenerationConfig): Promise<GeneratedImage | null> {
+    const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    let lastError: any = null;
+
+    let prompt = `PHOTO GENERATION REQUEST.
+    CONTEXT: ${config.context}
+    ARTISTIC STYLE: ${config.artisticStyle}
+    ${config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : ''}
+    ${config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : ''}
+    ${config.moodTone ? `MOOD/TONE: ${config.moodTone}` : ''}
+    
+    MODE: ${config.mode === PhotoGenerationMode.COMBINE ? 'Combine the visual elements of the provided images into a new cohesive scene.' : config.mode === PhotoGenerationMode.REFERENCE ? 'Use the style and composition of the provided image as a reference for the new generation.' : 'Generate from scratch based on the context.'}
+    
+    CRITICAL: High quality, professional lighting, perfect composition.`;
+
+    const parts: any[] = [];
+    
+    if (config.images && config.images.length > 0) {
+      config.images.forEach(img => {
+        parts.push({ inlineData: { mimeType: this.getMimeType(img), data: img.split(',')[1] } });
+      });
+    }
+    
+    parts.push({ text: prompt });
+
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
+      try {
+        return await this.withRetry(async () => {
+          const ai = this.getAi();
+          const response = await ai.models.generateContent({
+            model: model,
+            contents: { parts },
+            config: { 
+              imageConfig: { 
+                aspectRatio: "1:1", 
+                imageSize: "4K" 
+              } 
+            }
+          });
+
+          const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
+          if (imgPart?.inlineData?.data) {
+            const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+            const optimizedUrl = await this.optimizeImageSize(rawUrl);
+            return {
+              id: `photo-${Date.now()}-${Math.random()}`,
+              url: optimizedUrl,
+              prompt,
+              aspectRatio: "1:1",
+              label: "Foto Personalizada",
+              timestamp: Date.now()
+            };
+          }
+          return null;
+        }, i === 0 ? 2 : 1);
+      } catch (error: any) {
+        lastError = error;
+        console.warn(`Falha no modelo de foto ${model}:`, error);
+      }
+    }
+
+    throw lastError || new Error("Todos os modelos de foto falharam.");
   }
 
   static async quickEdit(base64Image: string, prompt: string): Promise<string | null> {
