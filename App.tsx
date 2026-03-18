@@ -159,17 +159,26 @@ const App: React.FC = () => {
     }
 
     setIsProcessing(true);
-    setProcessingMessage('Gerando sua foto personalizada com Imagen 3.0...');
+    setProcessingMessage('Gerando suas fotos personalizadas com Imagen 3.0...');
     
     try {
       const compressedImages = await Promise.all(config.images.map(img => compressImage(img)));
-      const result = await GeminiService.generatePhoto({ ...config, images: compressedImages });
+      const allResults: GeneratedImage[] = [];
       
-      if (result) {
-        setGeneratedImages([result]);
+      for (const format of config.formats) {
+        for (let i = 0; i < config.count; i++) {
+          const result = await GeminiService.generatePhoto({ ...config, images: compressedImages }, format);
+          if (result) {
+            allResults.push(result);
+            setGeneratedImages([...allResults]);
+          }
+        }
+      }
+      
+      if (allResults.length > 0) {
         setStep('results');
       } else {
-        alert("A IA não retornou a imagem. Tente ajustar o contexto ou estilos.");
+        alert("A IA não retornou imagens. Tente ajustar o contexto ou estilos.");
       }
     } catch (e: any) { 
       console.error("Erro na geração da foto:", e);

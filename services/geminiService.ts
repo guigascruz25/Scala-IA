@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
@@ -237,16 +237,41 @@ export class GeminiService {
     throw lastError || new Error("Todos os modelos de imagem falharam.");
   }
 
-  static async generatePhoto(config: PhotoGenerationConfig): Promise<GeneratedImage | null> {
+  static async generatePhoto(config: PhotoGenerationConfig, format: RequestedFormat): Promise<GeneratedImage | null> {
     const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
     let lastError: any = null;
 
+    const styleContexts: Record<string, string> = {
+      'Realistic': 'High-fidelity, sharp focus, natural lighting, realistic textures, 8k resolution.',
+      'Cinematic': 'Dramatic lighting, anamorphic lens flares, shallow depth of field, color graded, epic scale.',
+      'Anime': 'Japanese animation style, vibrant colors, clean lines, expressive characters, cel-shaded.',
+      'Architecture': 'Clean lines, geometric precision, wide-angle lens, professional architectural photography.',
+      'Cartoon': 'Playful, exaggerated features, bold colors, 2D vector style, friendly atmosphere.',
+      '3D Render': 'Octane render, Ray tracing, Unreal Engine 5 style, high detail, volumetric lighting.',
+      'Vector': 'Flat design, clean paths, minimalist, scalable vector graphics style.',
+      'Watercolor': 'Soft edges, bleeding colors, paper texture, artistic brush strokes.',
+      'Sketch / Line Art': 'Hand-drawn, pencil or ink lines, cross-hatching, artistic draft style.',
+      'Oil Painting': 'Thick impasto brushwork, rich textures, classic fine art style.',
+      'Abstract': 'Non-representational, focus on form and color, emotional, conceptual.',
+      'Surreal': 'Dreamlike, illogical juxtapositions, Salvador Dali style, mind-bending visuals.',
+      'Fashion': 'High-end editorial, studio lighting, stylish composition, vogue aesthetic.',
+      'Photography': 'Professional DSLR quality, natural composition, authentic feel.',
+      'Portrait': 'Close-up, soft background blur, focus on facial details and expression.'
+    };
+
+    const stylePrompt = styleContexts[config.artisticStyle] || config.artisticStyle;
+    const corporatePrompt = config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : '';
+    const genrePrompt = config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : '';
+    const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
+    const artDirection = config.complementaryPrompt ? `ART DIRECTION INSTRUCTIONS: ${config.complementaryPrompt}` : '';
+
     let prompt = `PHOTO GENERATION REQUEST.
-    CONTEXT: ${config.context}
-    ARTISTIC STYLE: ${config.artisticStyle}
-    ${config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : ''}
-    ${config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : ''}
-    ${config.moodTone ? `MOOD/TONE: ${config.moodTone}` : ''}
+    PRIMARY STYLE: ${stylePrompt}
+    ${corporatePrompt}
+    ${genrePrompt}
+    ${moodPrompt}
+    ${artDirection}
+    CONTEXT: ${config.context || 'A visually stunning scene matching the selected styles.'}
     
     MODE: ${config.mode === PhotoGenerationMode.COMBINE ? 'Combine the visual elements of the provided images into a new cohesive scene.' : config.mode === PhotoGenerationMode.REFERENCE ? 'Use the style and composition of the provided image as a reference for the new generation.' : 'Generate from scratch based on the context.'}
     
@@ -262,6 +287,8 @@ export class GeminiService {
     
     parts.push({ text: prompt });
 
+    const apiRatio = format.ratio === "1:1" ? "1:1" : format.ratio === "16:9" ? "16:9" : format.ratio === "9:16" ? "9:16" : format.ratio === "4:5" ? "3:4" : "1:1";
+
     for (let i = 0; i < models.length; i++) {
       const model = models[i];
       try {
@@ -272,8 +299,8 @@ export class GeminiService {
             contents: { parts },
             config: { 
               imageConfig: { 
-                aspectRatio: "1:1", 
-                imageSize: "4K" 
+                aspectRatio: apiRatio as any, 
+                imageSize: config.size 
               } 
             }
           });
@@ -286,8 +313,9 @@ export class GeminiService {
               id: `photo-${Date.now()}-${Math.random()}`,
               url: optimizedUrl,
               prompt,
-              aspectRatio: "1:1",
-              label: "Foto Personalizada",
+              aspectRatio: format.ratio,
+              dimensions: format.width ? { w: format.width, h: format.height } : undefined,
+              label: format.label,
               timestamp: Date.now()
             };
           }

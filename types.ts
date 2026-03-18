@@ -14,11 +14,15 @@ export enum PhotoGenerationMode {
 export interface PhotoGenerationConfig {
   mode: PhotoGenerationMode;
   context: string;
+  complementaryPrompt?: string;
   artisticStyle: string;
   corporateStyle?: string;
   genreTheme?: string;
   moodTone?: string;
   images: string[];
+  count: number;
+  formats: RequestedFormat[];
+  size: "1K" | "2K" | "4K";
 }
 
 export interface CreativeAnalysis {

@@ -27,12 +27,18 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
   const [photoConfig, setPhotoConfig] = useState<PhotoGenerationConfig>({
     mode: PhotoGenerationMode.FROM_SCRATCH,
     context: '',
+    complementaryPrompt: '',
     artisticStyle: 'Realistic',
-    images: []
+    images: [],
+    count: 1,
+    formats: [{ id: 'photo-std-1', ratio: '1:1', label: 'Feed (1:1)', isCustom: false }],
+    size: "1K"
   });
   
   const [customW, setCustomW] = useState<string>('');
   const [customH, setCustomH] = useState<string>('');
+  const [photoCustomW, setPhotoCustomW] = useState<string>('');
+  const [photoCustomH, setPhotoCustomH] = useState<string>('');
   const assetInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -110,7 +116,21 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
     handleFiles();
   };
 
+  const removePhotoFormat = (id: string) => {
+    if (photoConfig.formats.length <= 1) return;
+    setPhotoConfig(prev => ({ ...prev, formats: prev.formats.filter(f => f.id !== id) }));
+  };
+
+  const addPhotoCustomFormat = () => {
+    const w = parseInt(photoCustomW), h = parseInt(photoCustomH);
+    if (!w || !h) return;
+    const ratio = (w/h > 1.2) ? "16:9" : (w/h < 0.8) ? "9:16" : "1:1";
+    setPhotoConfig(prev => ({ ...prev, formats: [...prev.formats, { id: `photo-cust-${Date.now()}`, ratio: ratio as any, width: w, height: h, label: `${w}x${h}`, isCustom: true }] }));
+    setPhotoCustomW(''); setPhotoCustomH('');
+  };
+
   const totalItems = config.count * config.copies.length * config.formats.length;
+  const totalPhotoItems = photoConfig.count * photoConfig.formats.length;
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -177,7 +197,20 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
-            {/* 03 - Formatos & Configs Finais */}
+            {/* 03 - Instruções de Direção de Arte */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">03</span> Instruções de Direção de Arte
+              </h3>
+              <textarea 
+                value={config.complementaryPrompt}
+                onChange={e => setConfig(prev => ({ ...prev, complementaryPrompt: e.target.value }))}
+                placeholder="Ex: Use cores vibrantes, iluminação dramática, estilo minimalista..."
+                className="w-full h-24 bg-slate-900/40 border border-slate-800 rounded-2xl p-4 text-sm resize-none text-slate-300 focus:border-purple-500 outline-none transition-all placeholder:text-slate-600"
+              />
+            </section>
+
+            {/* 04 - Formatos & Configs Finais */}
             <section className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
@@ -375,11 +408,84 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
+            {/* Seção 7: Medidas */}
+            <section className="space-y-10 border-t border-slate-800 pt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Formatos (Scaling)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { r: "1:1", l: "Feed" },
+                        { r: "4:5", l: "Portrait" },
+                        { r: "9:16", l: "Story" },
+                        { r: "16:9", l: "Banner" }
+                      ].map(f => {
+                        const isSelected = photoConfig.formats.some(ff => ff.ratio === f.r && !ff.isCustom);
+                        return (
+                          <button key={f.r} onClick={() => {
+                            if (isSelected) {
+                              const formatToRemove = photoConfig.formats.find(ff => ff.ratio === f.r && !ff.isCustom);
+                              if (formatToRemove) removePhotoFormat(formatToRemove.id);
+                            } else {
+                              setPhotoConfig(prev => ({ ...prev, formats: [...prev.formats, { id: `photo-std-${Date.now()}`, ratio: f.r as AspectRatio, label: `${f.l} (${f.r})`, isCustom: false }] }));
+                            }
+                          }} className={`px-3 py-2 border rounded-xl text-[10px] font-bold transition-all ${isSelected ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                            {f.l} ({f.r})
+                          </button>
+                        );
+                      })}
+                  </div>
+                  
+                  <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Formatos Personalizados</label>
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Largura" value={photoCustomW} onChange={e => setPhotoCustomW(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-purple-500" />
+                      <span className="text-slate-500 self-center text-xs">x</span>
+                      <input type="number" placeholder="Altura" value={photoCustomH} onChange={e => setPhotoCustomH(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:border-purple-500" />
+                      <button onClick={addPhotoCustomFormat} disabled={!photoCustomW || !photoCustomH} className="bg-slate-800 hover:bg-slate-700 text-white px-3 rounded-lg text-xs font-bold transition-all disabled:opacity-50">Adicionar</button>
+                    </div>
+                    
+                    {photoConfig.formats.filter(f => f.isCustom).length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {photoConfig.formats.filter(f => f.isCustom).map(f => (
+                          <div key={f.id} className="flex items-center gap-1 bg-purple-600/20 border border-purple-500/30 text-purple-400 px-2 py-1 rounded-lg text-[10px] font-bold">
+                            {f.label}
+                            <button onClick={() => removePhotoFormat(f.id)} className="hover:text-white ml-1">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Quantas Variantes?</label>
+                  <input 
+                    type="number" min="1" max="10" 
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-center text-white font-bold outline-none focus:border-purple-500" 
+                    value={photoConfig.count} onChange={e => setPhotoConfig(prev => ({ ...prev, count: parseInt(e.target.value) || 1 }))}
+                  />
+                  <p className="text-[10px] text-slate-500 text-center italic">Total estimado: {totalPhotoItems} arquivos</p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resolução</label>
+                  <div className="grid grid-cols-3 gap-2">
+                      {["1K", "2K", "4K"].map(sz => (
+                        <button key={sz} onClick={() => setPhotoConfig(prev => ({ ...prev, size: sz as any }))} className={`py-3 rounded-xl border text-[10px] font-black transition-all ${photoConfig.size === sz ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
+                          {sz} - {sz === '1K' ? 'Digital' : sz === '2K' ? 'Premium' : 'Master'}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <div className="pt-6">
-              <button onClick={() => onGeneratePhoto(photoConfig)} disabled={isGenerating || !photoConfig.context} className="relative w-full bg-gradient-to-r from-purple-600 to-purple-800 py-6 rounded-2xl font-black text-xl text-white hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-purple-500/20 disabled:opacity-50 overflow-hidden group">
+              <button onClick={() => onGeneratePhoto(photoConfig)} disabled={isGenerating || (!photoConfig.context && !photoConfig.artisticStyle)} className="relative w-full bg-gradient-to-r from-purple-600 to-purple-800 py-6 rounded-2xl font-black text-xl text-white hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-purple-500/20 disabled:opacity-50 overflow-hidden group">
                 <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 <span className="relative z-10 flex items-center justify-center gap-4">
-                  {isGenerating ? "PROCESSANDO FOTO..." : "GERAR FOTO"}
+                  {isGenerating ? "PROCESSANDO FOTO..." : `GERAR ${totalPhotoItems} FOTOS`}
                   {!isGenerating && <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h14a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
                 </span>
               </button>
