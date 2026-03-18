@@ -118,27 +118,50 @@ export class GeminiService {
   private static async generateSingleImages(analysis: CreativeAnalysis, config: GenerationConfig, baseImageBase64?: string): Promise<GeneratedImage[]> {
     const results: GeneratedImage[] = [];
     
-    // Gerar para cada cópia, para cada formato, o número de variantes solicitado
-    for (let v = 0; v < config.count; v++) {
-      for (let c = 0; c < config.copies.length; c++) {
-        const copy = config.copies[c];
-        for (let f = 0; f < config.formats.length; f++) {
-          const format = config.formats[f];
-          
-          // O seedOffset garante que cada variante (v) seja visualmente diferente das outras
-          const seedOffset = v * 100 + c * 10 + f;
-          
-          const res = await this.renderImage(
-            analysis, 
-            config, 
-            format, 
-            copy.headline, 
-            copy.subHeadline, 
-            baseImageBase64, 
-            undefined, 
-            seedOffset
-          );
-          if (res) results.push(res);
+    if (config.evolutionType === EvolutionType.BATCH && config.batchData) {
+      for (let v = 0; v < config.count; v++) {
+        for (let i = 0; i < config.batchData.length; i++) {
+          const item = config.batchData[i];
+          for (let f = 0; f < config.formats.length; f++) {
+            const format = config.formats[f];
+            const seedOffset = v * 1000 + i * 100 + f;
+            
+            const res = await this.renderImage(
+              analysis, 
+              config, 
+              format, 
+              item.headline, 
+              item.subHeadline, 
+              baseImageBase64, 
+              undefined, 
+              seedOffset,
+              item.description,
+              item.artDirection
+            );
+            if (res) results.push(res);
+          }
+        }
+      }
+    } else {
+      for (let v = 0; v < config.count; v++) {
+        for (let c = 0; c < config.copies.length; c++) {
+          const copy = config.copies[c];
+          for (let f = 0; f < config.formats.length; f++) {
+            const format = config.formats[f];
+            const seedOffset = v * 100 + c * 10 + f;
+            
+            const res = await this.renderImage(
+              analysis, 
+              config, 
+              format, 
+              copy.headline, 
+              copy.subHeadline, 
+              baseImageBase64, 
+              undefined, 
+              seedOffset
+            );
+            if (res) results.push(res);
+          }
         }
       }
     }
@@ -153,12 +176,18 @@ export class GeminiService {
     subHeadline: string, 
     baseImg?: string,
     specificAsset?: string,
-    seedOffset?: number
+    seedOffset?: number,
+    batchDescription?: string,
+    batchArtDirection?: string
   ): Promise<GeneratedImage | null> {
     const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
     let lastError: any = null;
 
     const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
+    
+    const artDirection = batchArtDirection || config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.';
+    const sceneContext = batchDescription || analysis.basePrompt;
+
     let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
     PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY.
     
@@ -168,10 +197,10 @@ export class GeminiService {
     - Headline: "${headline}"
     - Sub-headline: "${subHeadline}"
 
-    ART DIRECTION INSTRUCTIONS: "${config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.'}"
+    ART DIRECTION INSTRUCTIONS: "${artDirection}"
 
     STYLE REFERENCE: ${analysis.visualStyle}. 
-    SCENE CONTEXT: ${analysis.basePrompt}.
+    SCENE CONTEXT: ${sceneContext}.
     VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
     const parts: any[] = [];

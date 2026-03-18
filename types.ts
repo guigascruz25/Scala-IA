@@ -2,7 +2,14 @@
 export enum EvolutionType {
   FROM_SCRATCH = 'FROM_SCRATCH',
   REPLICATE = 'REPLICATE',
-  REPLICATE_WITH_CHANGES = 'REPLICATE_WITH_CHANGES'
+  BATCH = 'BATCH'
+}
+
+export interface BatchItem {
+  headline: string;
+  subHeadline: string;
+  description: string;
+  artDirection: string;
 }
 
 export enum PhotoGenerationMode {
@@ -67,6 +74,7 @@ export interface GenerationConfig {
     style?: string;
   };
   copies: AdCopy[];
+  batchData?: BatchItem[];
   complementaryPrompt?: string;
   count: number;
   formats: RequestedFormat[];

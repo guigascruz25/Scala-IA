@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode } from '../types.ts';
+import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode, BatchItem } from '../types.ts';
 import { GeminiService } from '../services/geminiService.ts';
 
 interface EvolutionFormProps {
@@ -42,6 +42,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
   const assetInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
 
   const artisticStyles = [
     'Realistic', 'Cinematic', 'Anime', 'Architecture', 'Cartoon', 
@@ -116,6 +117,34 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
     handleFiles();
   };
 
+  const handleBatchCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      const batchData: BatchItem[] = lines.slice(1).filter(line => line.trim()).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const item: any = {};
+        headers.forEach((header, index) => {
+          if (header === 'headline') item.headline = values[index];
+          if (header === 'subheadline') item.subHeadline = values[index];
+          if (header === 'description') item.description = values[index];
+          if (header === 'art_direction') item.artDirection = values[index];
+        });
+        return item as BatchItem;
+      });
+
+      setConfig(prev => ({ ...prev, batchData }));
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   const removePhotoFormat = (id: string) => {
     if (photoConfig.formats.length <= 1) return;
     setPhotoConfig(prev => ({ ...prev, formats: prev.formats.filter(f => f.id !== id) }));
@@ -129,7 +158,9 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
     setPhotoCustomW(''); setPhotoCustomH('');
   };
 
-  const totalItems = config.count * config.copies.length * config.formats.length;
+  const totalItems = config.evolutionType === EvolutionType.BATCH 
+    ? (config.batchData?.length || 0) * config.count * config.formats.length
+    : config.count * config.copies.length * config.formats.length;
   const totalPhotoItems = photoConfig.count * photoConfig.formats.length;
 
   return (
@@ -159,14 +190,43 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                 <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">01</span> Estratégia de Geração
               </h3>
               <div className="grid grid-cols-3 gap-3">
-                {[EvolutionType.FROM_SCRATCH, EvolutionType.REPLICATE, EvolutionType.REPLICATE_WITH_CHANGES].map(t => (
+                {[EvolutionType.FROM_SCRATCH, EvolutionType.REPLICATE, EvolutionType.BATCH].map(t => (
                   <button key={t} onClick={() => setConfig(prev => ({ ...prev, evolutionType: t }))}
                     className={`p-4 rounded-xl border-2 transition-all text-sm font-bold ${config.evolutionType === t ? 'border-purple-500 bg-purple-600/20 text-purple-400' : 'border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                    {t === EvolutionType.FROM_SCRATCH ? 'Novo Do Zero' : t === EvolutionType.REPLICATE ? 'Manter Estilo' : 'Evoluir Ideia'}
+                    {t === EvolutionType.FROM_SCRATCH ? 'Novo Do Zero' : t === EvolutionType.REPLICATE ? 'Manter Estilo' : 'Criativos em Lote'}
                   </button>
                 ))}
               </div>
             </section>
+
+            {config.evolutionType === EvolutionType.BATCH && (
+              <section className="space-y-4">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">01.1</span> Upload de Planilha (CSV)
+                </h3>
+                <div 
+                  onClick={() => batchInputRef.current?.click()}
+                  className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-4 transition-all ${config.batchData ? 'border-purple-500 bg-purple-900/10' : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'}`}
+                >
+                  <svg className={`h-12 w-12 ${config.batchData ? 'text-purple-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div className="text-center">
+                    <p className="text-white font-bold">{config.batchData ? `${config.batchData.length} Variantes Encontradas` : 'Clique para subir seu CSV'}</p>
+                    <p className="text-slate-500 text-xs mt-1">Colunas: headline, subheadline, description, art_direction</p>
+                  </div>
+                  {config.batchData && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setConfig(prev => ({ ...prev, batchData: undefined })); }}
+                      className="absolute top-4 right-4 text-red-400 hover:text-red-300 text-xs font-bold"
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+                <input type="file" ref={batchInputRef} className="hidden" accept=".csv" onChange={handleBatchCsvUpload} />
+              </section>
+            )}
 
             {/* 02 - Ativos */}
             <section className="space-y-4">
@@ -197,24 +257,11 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
-            {/* 03 - Instruções de Direção de Arte */}
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">03</span> Instruções de Direção de Arte
-              </h3>
-              <textarea 
-                value={config.complementaryPrompt}
-                onChange={e => setConfig(prev => ({ ...prev, complementaryPrompt: e.target.value }))}
-                placeholder="Ex: Use cores vibrantes, iluminação dramática, estilo minimalista..."
-                className="w-full h-24 bg-slate-900/40 border border-slate-800 rounded-2xl p-4 text-sm resize-none text-slate-300 focus:border-purple-500 outline-none transition-all placeholder:text-slate-600"
-              />
-            </section>
-
-            {/* 04 - Textos do Anúncio (Headlines) */}
+            {/* 03 - Textos do Anúncio (Headlines) */}
             <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Textos do Anúncio (Headlines)
+                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">03</span> Textos do Anúncio (Headlines)
                 </h3>
                 <button 
                   onClick={addCopy}
@@ -241,30 +288,45 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                       </button>
                     )}
                     
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Headline #{idx + 1}</label>
-                      <input 
-                        type="text"
-                        value={copy.headline}
-                        onChange={e => updateCopy(idx, 'headline', e.target.value)}
-                        placeholder="Ex: Transforme seu negócio com IA"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Subheadline #{idx + 1}</label>
-                      <input 
-                        type="text"
-                        value={copy.subHeadline}
-                        onChange={e => updateCopy(idx, 'subHeadline', e.target.value)}
-                        placeholder="Ex: Aumente sua produtividade em até 10x"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Headline #{idx + 1}</label>
+                        <input 
+                          type="text"
+                          value={copy.headline}
+                          onChange={e => updateCopy(idx, 'headline', e.target.value)}
+                          placeholder="Ex: Transforme seu negócio com IA"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Subheadline #{idx + 1}</label>
+                        <input 
+                          type="text"
+                          value={copy.subHeadline}
+                          onChange={e => updateCopy(idx, 'subHeadline', e.target.value)}
+                          placeholder="Ex: Aumente sua produtividade em até 10x"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+            </section>
+
+            {/* 04 - Instruções de Direção de Arte */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Instruções de Direção de Arte
+              </h3>
+              <textarea 
+                value={config.complementaryPrompt}
+                onChange={e => setConfig(prev => ({ ...prev, complementaryPrompt: e.target.value }))}
+                placeholder="Ex: Use cores vibrantes, iluminação dramática, estilo minimalista..."
+                className="w-full h-24 bg-slate-900/40 border border-slate-800 rounded-2xl p-4 text-sm resize-none text-slate-300 focus:border-purple-500 outline-none transition-all placeholder:text-slate-600"
+              />
             </section>
 
             {/* 05 - Formatos & Configs Finais */}
