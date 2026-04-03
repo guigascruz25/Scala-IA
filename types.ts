@@ -94,6 +94,17 @@ export interface GenerationConfig {
   logoImage?: string;
 }
 
+export interface EditConfig {
+  instruction: string;
+  image: string; // base64
+  aspectRatio: AspectRatio;
+  newCharacterImage?: string; // base64
+  targetText?: string;
+  targetColor?: string;
+  maskImage?: string; // base64 for inpainting/removal
+  glowIntensity?: number;
+}
+
 export interface GeneratedImage {
   id: string;
   url: string;

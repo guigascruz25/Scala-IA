@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GeneratedImage } from '../types.ts';
 import { GeminiService } from '../services/geminiService.ts';
+import ImageEditor from './ImageEditor.tsx';
 
 interface GalleryViewProps {
   images: GeneratedImage[];
@@ -10,7 +11,8 @@ interface GalleryViewProps {
 }
 
 const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUpdate }) => {
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
+  const [quickEditId, setQuickEditId] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -21,7 +23,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
       const newUrl = await GeminiService.quickEdit(base64, editPrompt);
       if (newUrl) {
         onImageUpdate(id, newUrl);
-        setEditingId(null);
+        setQuickEditId(null);
         setEditPrompt('');
       }
     } finally {
@@ -46,11 +48,26 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
             <div className={`overflow-hidden bg-slate-950 relative flex items-center justify-center aspect-square`}>
               <img src={img.url} alt={img.prompt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
-              <button onClick={() => setEditingId(img.id)} className="absolute top-4 right-4 bg-purple-600 p-3 rounded-full shadow-lg hover:scale-110 active:scale-90 transition-all z-20">
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.143-7.714L1 12l6.857-2.143L11 3z" />
-                </svg>
-              </button>
+              <div className="absolute top-4 right-4 flex gap-2 z-20">
+                <button 
+                  onClick={() => setEditingImage(img)} 
+                  className="bg-purple-600 p-3 rounded-full shadow-lg hover:scale-110 active:scale-90 transition-all"
+                  title="Editor Completo"
+                >
+                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button 
+                  onClick={() => setQuickEditId(img.id)} 
+                  className="bg-slate-800/80 backdrop-blur-md p-3 rounded-full shadow-lg hover:scale-110 active:scale-90 transition-all"
+                  title="Ajuste Rápido"
+                >
+                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.143-7.714L1 12l6.857-2.143L11 3z" />
+                  </svg>
+                </button>
+              </div>
 
               <div className="absolute bottom-4 left-4 z-20 flex gap-2">
                 <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-lg border border-white/10 uppercase tracking-tighter">
@@ -59,7 +76,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
               </div>
             </div>
 
-            {editingId === img.id && (
+            {quickEditId === img.id && (
               <div className="absolute inset-0 bg-slate-900/95 p-6 flex flex-col justify-center gap-4 animate-in fade-in duration-300 z-30">
                 <h4 className="font-bold text-purple-400">Refinar com IA</h4>
                 <textarea autoFocus placeholder="Descreva o ajuste..." className="bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm h-32 text-white outline-none" value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} />
@@ -67,7 +84,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
                   <button disabled={isEditing} onClick={() => handleQuickEdit(img.id, img.url)} className="flex-1 bg-purple-600 py-2 rounded-lg text-sm font-bold text-white disabled:opacity-50">
                     {isEditing ? 'Ajustando...' : 'Aplicar'}
                   </button>
-                  <button onClick={() => setEditingId(null)} className="px-4 py-2 border border-slate-700 rounded-lg text-sm text-slate-300">Cancelar</button>
+                  <button onClick={() => setQuickEditId(null)} className="px-4 py-2 border border-slate-700 rounded-lg text-sm text-slate-300">Cancelar</button>
                 </div>
               </div>
             )}
@@ -84,6 +101,14 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
           </div>
         ))}
       </div>
+
+      {editingImage && (
+        <ImageEditor 
+          image={editingImage} 
+          onClose={() => setEditingImage(null)} 
+          onUpdate={(newUrl) => onImageUpdate(editingImage.id, newUrl)} 
+        />
+      )}
     </div>
   );
 };

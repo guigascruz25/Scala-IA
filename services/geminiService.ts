@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat, DesignStrategy } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat, DesignStrategy, EditConfig } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
@@ -447,6 +447,66 @@ export class GeminiService {
           ]
         }
       });
+      const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
+      if (imgPart?.inlineData?.data) {
+        const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
+        return await this.optimizeImageSize(rawUrl);
+      }
+      return null;
+    });
+  }
+
+  static async editImage(config: EditConfig): Promise<string | null> {
+    return await this.withRetry(async () => {
+      const ai = this.getAi();
+      const base64Data = config.image.split(',')[1];
+      
+      const parts: any[] = [
+        { inlineData: { data: base64Data, mimeType: 'image/jpeg' } }
+      ];
+
+      let enhancedInstruction = `EDIT INSTRUCTION: ${config.instruction}.`;
+
+      if (config.newCharacterImage) {
+        const charBase64 = config.newCharacterImage.split(',')[1];
+        parts.push({ inlineData: { data: charBase64, mimeType: 'image/jpeg' } });
+        enhancedInstruction += ` Use the second image as the new character/person to replace the one in the first image. Maintain the pose and lighting of the original scene.`;
+      }
+
+      if (config.maskImage) {
+        const maskBase64 = config.maskImage.split(',')[1];
+        parts.push({ inlineData: { data: maskBase64, mimeType: 'image/png' } });
+        enhancedInstruction += ` The third image is a mask indicating the area to remove or modify. Focus the edit on the white/marked areas.`;
+      }
+
+      if (config.targetText) {
+        enhancedInstruction += ` The specific text to update or add is: "${config.targetText}". Ensure it is legible and fits the style.`;
+      }
+
+      if (config.targetColor) {
+        enhancedInstruction += ` Use the color ${config.targetColor} as the primary theme or for the specific elements mentioned.`;
+      }
+
+      if (config.glowIntensity !== undefined) {
+        enhancedInstruction += ` Set the glow/neon intensity to level ${config.glowIntensity} (where 0 is none and 100 is maximum).`;
+      }
+
+      enhancedInstruction += ` 
+      CRITICAL: Maintain the same overall composition and identity of the subjects if they are not the target of the edit. 
+      Ensure high quality and realistic integration of the changes.`;
+
+      parts.push({ text: enhancedInstruction });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts },
+        config: {
+          imageConfig: {
+            aspectRatio: config.aspectRatio === "4:5" ? "3:4" : config.aspectRatio as any
+          }
+        }
+      });
+
       const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
       if (imgPart?.inlineData?.data) {
         const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
