@@ -79,6 +79,10 @@ export interface GenerationConfig {
   count: number;
   formats: RequestedFormat[];
   size: "1K" | "2K" | "4K";
+  artisticStyle?: string;
+  corporateStyle?: string;
+  genreTheme?: string;
+  moodTone?: string;
   assetImages: string[];
   logoImage?: string;
 }

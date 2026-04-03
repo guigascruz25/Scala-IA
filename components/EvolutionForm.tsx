@@ -316,10 +316,67 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
-            {/* 04 - Instruções de Direção de Arte */}
+            {/* 04 - Estilos Artísticos */}
             <section className="space-y-4">
               <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Instruções de Direção de Arte
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Estilo Artístico
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {artisticStyles.map(s => (
+                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, artisticStyle: prev.artisticStyle === s ? undefined : s }))}
+                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.artisticStyle === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">05</span> Estilo Corporativo (Opcional)
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {corporateStyles.map(s => (
+                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, corporateStyle: config.corporateStyle === s ? undefined : s }))}
+                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.corporateStyle === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">06</span> Gênero e Tema (Opcional)
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {genreThemes.map(s => (
+                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, genreTheme: config.genreTheme === s ? undefined : s }))}
+                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.genreTheme === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">07</span> Mood e Tom (Opcional)
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {moodTones.map(s => (
+                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, moodTone: config.moodTone === s ? undefined : s }))}
+                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.moodTone === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* 08 - Instruções de Direção de Arte */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">08</span> Instruções de Direção de Arte
               </h3>
               <textarea 
                 value={config.complementaryPrompt}
@@ -329,7 +386,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               />
             </section>
 
-            {/* 05 - Formatos & Configs Finais */}
+            {/* 09 - Formatos & Configs Finais */}
             <section className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
@@ -403,7 +460,11 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
             </section>
 
             <div className="pt-6">
-              <button onClick={() => onGenerate(config)} disabled={isGenerating} className="relative w-full bg-gradient-to-r from-purple-600 to-purple-800 py-6 rounded-2xl font-black text-xl text-white hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-purple-500/20 disabled:opacity-50 overflow-hidden group">
+              <button 
+                onClick={() => onGenerate(config)} 
+                disabled={isGenerating || (config.evolutionType === EvolutionType.FROM_SCRATCH && !config.artisticStyle && !config.complementaryPrompt)} 
+                className="relative w-full bg-gradient-to-r from-purple-600 to-purple-800 py-6 rounded-2xl font-black text-xl text-white hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-purple-500/20 disabled:opacity-50 overflow-hidden group"
+              >
                 <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                 <span className="relative z-10 flex items-center justify-center gap-4">
                   {isGenerating ? "PROCESSANDO ESTRATÉGIA..." : `GERAR ${totalItems} VARIAÇÕES`}
