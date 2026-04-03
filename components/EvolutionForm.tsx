@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode, BatchItem } from '../types.ts';
+import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode, BatchItem, DesignStrategy } from '../types.ts';
 import { GeminiService } from '../services/geminiService.ts';
 
 interface EvolutionFormProps {
@@ -15,6 +15,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
   
   const [config, setConfig] = useState<GenerationConfig>({
     evolutionType: EvolutionType.REPLICATE,
+    designStrategy: DesignStrategy.KEEP,
     count: 3,
     formats: [{ id: 'std-1', ratio: '1:1', label: 'Feed (1:1)', isCustom: false }],
     size: "1K",
@@ -194,6 +195,25 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                   <button key={t} onClick={() => setConfig(prev => ({ ...prev, evolutionType: t }))}
                     className={`p-4 rounded-xl border-2 transition-all text-sm font-bold ${config.evolutionType === t ? 'border-purple-500 bg-purple-600/20 text-purple-400' : 'border-slate-800 text-slate-400 hover:border-slate-700'}`}>
                     {t === EvolutionType.FROM_SCRATCH ? 'Novo Do Zero' : t === EvolutionType.REPLICATE ? 'Manter Estilo' : 'Criativos em Lote'}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* 01.2 - Estratégia de Design */}
+            <section className="space-y-4">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">01.2</span> Estratégia de Design
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: DesignStrategy.KEEP, label: 'Manter Tipografia/Design' },
+                  { id: DesignStrategy.EVOLVE, label: 'Evoluir Tipografia/Design' },
+                  { id: DesignStrategy.NEW, label: 'Novo Design' }
+                ].map(s => (
+                  <button key={s.id} onClick={() => setConfig(prev => ({ ...prev, designStrategy: s.id }))}
+                    className={`p-4 rounded-xl border-2 transition-all text-[10px] font-bold ${config.designStrategy === s.id ? 'border-purple-500 bg-purple-600/20 text-purple-400' : 'border-slate-800 text-slate-400 hover:border-slate-700'}`}>
+                    {s.label}
                   </button>
                 ))}
               </div>

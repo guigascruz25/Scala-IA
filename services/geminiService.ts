@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat, DesignStrategy } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
@@ -210,8 +210,16 @@ export class GeminiService {
     const genrePrompt = config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : '';
     const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
 
+    const designStrategyPrompt = config.designStrategy === DesignStrategy.KEEP 
+      ? "CRITICAL: Maintain the EXACT typography, font style, and design layout from the reference image. REPLACE the old text with the new headlines provided. DO NOT leave the old text visible."
+      : config.designStrategy === DesignStrategy.EVOLVE
+      ? "Base the design on the reference image's typography and layout, but improve it with better spacing, glow effects, and modern touches. REPLACE the old text with the new headlines."
+      : "Create a COMPLETELY NEW design layout and typography. Ignore the reference image's text and layout, but maintain the subject's identity.";
+
     let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
     PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY and PREMIUM VISUAL QUALITY.
+    
+    DESIGN STRATEGY: ${designStrategyPrompt}
     
     PRIMARY STYLE: ${stylePrompt}
     ${corporatePrompt}
@@ -219,6 +227,13 @@ export class GeminiService {
     ${moodPrompt}
     
     CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity. The person must appear integrated into the environment, not cut and pasted.
+    
+    CRITICAL TEXT REPLACEMENT:
+    - The reference image contains text that MUST be removed or covered.
+    - DO NOT just add new text on top of the old one.
+    - The new headlines MUST replace the existing ones.
+    - If the reference image has "R$3K MENSAL", and the new headline is "R$5K MENSAL", ensure ONLY "R$5K MENSAL" is visible in the final result.
+    - Use the same font family and visual weight as the original text if KEEP or EVOLVE strategy is selected.
     
     TEXT OVERLAY (Portuguese): 
     - Headline: "${headline}"

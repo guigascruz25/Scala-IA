@@ -64,8 +64,15 @@ export interface RequestedFormat {
   isCustom: boolean;
 }
 
+export enum DesignStrategy {
+  KEEP = 'KEEP',
+  EVOLVE = 'EVOLVE',
+  NEW = 'NEW'
+}
+
 export interface GenerationConfig {
   evolutionType: EvolutionType;
+  designStrategy?: DesignStrategy;
   modifications?: {
     person?: string;
     scenario?: string;
