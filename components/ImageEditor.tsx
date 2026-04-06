@@ -17,6 +17,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ image, onClose, onUpdate }) =
   const [currentImageUrl, setCurrentImageUrl] = useState(image.url);
   const [history, setHistory] = useState<string[]>([image.url]);
   const [editMode, setEditMode] = useState<EditMode>('none');
+  const [imageDimensions, setImageDimensions] = useState({ w: 0, h: 0 });
 
   // Advanced Edit States
   const [newCharacterImage, setNewCharacterImage] = useState<string | null>(null);
@@ -29,6 +30,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ image, onClose, onUpdate }) =
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasMask, setHasMask] = useState(false);
   const characterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      setImageDimensions({ w: img.width, h: img.height });
+    };
+    img.src = currentImageUrl;
+  }, [currentImageUrl]);
 
   useEffect(() => {
     if (editMode === 'remove' && canvasRef.current) {
@@ -164,16 +173,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ image, onClose, onUpdate }) =
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-6xl h-full max-h-[90vh] rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-slate-900 border-x border-b md:border border-slate-700 w-full max-w-6xl h-full md:h-[90vh] md:max-h-[900px] md:rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl">
         
         {/* Preview Area */}
-        <div className="flex-1 bg-black/40 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-          <div className="absolute top-6 left-6 z-10 flex gap-2">
+        <div className="flex-1 bg-black/20 flex flex-col items-center justify-center p-2 md:p-10 relative overflow-hidden min-h-0">
+          <div className="absolute top-4 left-4 z-30 flex gap-2">
             <button 
               onClick={undo} 
               disabled={history.length <= 1 || isProcessing}
-              className="bg-slate-800/80 hover:bg-slate-700 text-white p-2 rounded-lg disabled:opacity-30 transition-all"
+              className="bg-slate-800/80 hover:bg-slate-700 text-white p-2 rounded-lg disabled:opacity-30 transition-all shadow-lg"
               title="Desfazer"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -183,7 +192,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ image, onClose, onUpdate }) =
             {editMode === 'remove' && (
               <button 
                 onClick={clearMask}
-                className="bg-red-600/80 hover:bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                className="bg-red-600/80 hover:bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-lg"
               >
                 Limpar Pincel
               </button>
@@ -192,50 +201,55 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ image, onClose, onUpdate }) =
 
           <div className="relative w-full h-full flex items-center justify-center">
             {isProcessing && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+              <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm">
                 <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4"></div>
                 <p className="text-white font-bold animate-pulse">Aplicando Inteligência...</p>
               </div>
             )}
             
-            <div className="relative max-w-full max-h-full">
-              <img 
-                src={currentImageUrl} 
-                className={`max-w-full max-h-full object-contain rounded-xl shadow-2xl transition-all duration-500 ${isProcessing ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}`}
-                alt="Preview"
-              />
-              
-              {editMode === 'remove' && (
-                <canvas
-                  ref={canvasRef}
-                  width={1024}
-                  height={1024}
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                  className="absolute inset-0 w-full h-full cursor-crosshair opacity-50 mix-blend-screen"
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <div className="relative max-w-full max-h-full flex items-center justify-center" style={{ aspectRatio: imageDimensions.w ? `${imageDimensions.w}/${imageDimensions.h}` : 'auto' }}>
+                <img 
+                  src={currentImageUrl} 
+                  className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-500 ${isProcessing ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}`}
+                  alt="Preview"
                 />
-              )}
+                
+                {editMode === 'remove' && (
+                  <canvas
+                    ref={canvasRef}
+                    width={imageDimensions.w || 1024}
+                    height={imageDimensions.h || 1024}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                    className="absolute inset-0 w-full h-full cursor-crosshair opacity-50 mix-blend-screen"
+                  />
+                )}
+              </div>
             </div>
           </div>
           
           {editMode === 'remove' && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-purple-600 px-6 py-2 rounded-full text-white font-bold text-sm shadow-xl">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 px-6 py-2 rounded-full text-white font-bold text-xs shadow-xl z-30 whitespace-nowrap">
               Pinte na tela o que deseja remover
             </div>
           )}
         </div>
 
         {/* Controls Area */}
-        <div className="w-full md:w-[400px] border-l border-slate-800 p-8 flex flex-col gap-6 overflow-y-auto bg-slate-900/50">
+        <div className="w-full md:w-[420px] h-[45vh] md:h-full border-t md:border-t-0 md:border-l border-slate-800 p-6 md:p-8 flex flex-col gap-6 overflow-y-auto bg-slate-900/90 backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-white tracking-tight">Editor IA</h2>
-            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div>
+              <h2 className="text-2xl font-black text-white tracking-tight">Editor IA</h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Refinamento Profissional</p>
+            </div>
+            <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-all">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

@@ -492,8 +492,13 @@ export class GeminiService {
       }
 
       enhancedInstruction += ` 
-      CRITICAL: Maintain the same overall composition and identity of the subjects if they are not the target of the edit. 
-      Ensure high quality and realistic integration of the changes.`;
+      CRITICAL: This is an EDIT task, not a new generation. 
+      1. PRESERVE the identity, face, and features of any person in the image 100%.
+      2. MAINTAIN the background, lighting, and overall composition exactly as it is, unless specifically asked to change it.
+      3. ONLY modify the specific elements requested in the instruction.
+      4. Ensure the integration of new elements is seamless and matches the original style.
+      5. DO NOT add any new elements or text that were not requested.
+      6. If a character is being replaced, use the second image as the source for the new character, but keep the original pose and lighting.`;
 
       parts.push({ text: enhancedInstruction });
 
