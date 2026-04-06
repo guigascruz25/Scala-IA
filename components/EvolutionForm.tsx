@@ -336,67 +336,10 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
-            {/* 04 - Estilos Artísticos */}
+            {/* 04 - Instruções de Direção de Arte */}
             <section className="space-y-4">
               <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Estilo Artístico
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {artisticStyles.map(s => (
-                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, artisticStyle: prev.artisticStyle === s ? undefined : s }))}
-                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.artisticStyle === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">05</span> Estilo Corporativo (Opcional)
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {corporateStyles.map(s => (
-                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, corporateStyle: config.corporateStyle === s ? undefined : s }))}
-                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.corporateStyle === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">06</span> Gênero e Tema (Opcional)
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {genreThemes.map(s => (
-                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, genreTheme: config.genreTheme === s ? undefined : s }))}
-                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.genreTheme === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">07</span> Mood e Tom (Opcional)
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {moodTones.map(s => (
-                  <button key={s} onClick={() => setConfig(prev => ({ ...prev, moodTone: config.moodTone === s ? undefined : s }))}
-                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all ${config.moodTone === s ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* 08 - Instruções de Direção de Arte */}
-            <section className="space-y-4">
-              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">08</span> Instruções de Direção de Arte
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Instruções de Direção de Arte
               </h3>
               <textarea 
                 value={config.complementaryPrompt}
@@ -406,7 +349,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               />
             </section>
 
-            {/* 09 - Formatos & Configs Finais */}
+            {/* 05 - Formatos & Configs Finais */}
             <section className="space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="space-y-4">
