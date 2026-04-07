@@ -1,27 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat, DesignStrategy, EditConfig } from "../types.ts";
+import { CreativeAnalysis, GenerationConfig, EvolutionType, GeneratedImage, AspectRatio, PhotoGenerationConfig, PhotoGenerationMode, RequestedFormat } from "../types.ts";
 
 export class GeminiService {
   private static modelSwitchCallback: ((message: string) => void) | null = null;
-
-  private static styleContexts: Record<string, string> = {
-    'Realistic': 'High-fidelity, sharp focus, natural lighting, realistic textures, 8k resolution.',
-    'Cinematic': 'Dramatic lighting, anamorphic lens flares, shallow depth of field, color graded, epic scale.',
-    'Anime': 'Japanese animation style, vibrant colors, clean lines, expressive characters, cel-shaded.',
-    'Architecture': 'Clean lines, geometric precision, wide-angle lens, professional architectural photography.',
-    'Cartoon': 'Playful, exaggerated features, bold colors, 2D vector style, friendly atmosphere.',
-    '3D Render': 'Octane render, Ray tracing, Unreal Engine 5 style, high detail, volumetric lighting.',
-    'Vector': 'Flat design, clean paths, minimalist, scalable vector graphics style.',
-    'Watercolor': 'Soft edges, bleeding colors, paper texture, artistic brush strokes.',
-    'Sketch / Line Art': 'Hand-drawn, pencil or ink lines, cross-hatching, artistic draft style.',
-    'Oil Painting': 'Thick impasto brushwork, rich textures, classic fine art style.',
-    'Abstract': 'Non-representational, focus on form and color, emotional, conceptual.',
-    'Surreal': 'Dreamlike, illogical juxtapositions, Salvador Dali style, mind-bending visuals.',
-    'Fashion': 'High-end editorial, studio lighting, stylish composition, vogue aesthetic.',
-    'Photography': 'Professional DSLR quality, natural composition, authentic feel.',
-    'Portrait': 'Close-up, soft background blur, focus on facial details and expression.'
-  };
 
   static setOnModelSwitch(callback: (message: string) => void) {
     this.modelSwitchCallback = callback;
@@ -202,81 +184,20 @@ export class GeminiService {
     let lastError: any = null;
 
     const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
+    
     const artDirection = batchArtDirection || config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.';
     const sceneContext = batchDescription || analysis.basePrompt;
-    
-    const stylePrompt = config.artisticStyle ? (GeminiService.styleContexts[config.artisticStyle] || config.artisticStyle) : '';
-    const corporatePrompt = config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : '';
-    const genrePrompt = config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : '';
-    const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
-
-    const designStrategyPrompt = config.designStrategy === DesignStrategy.KEEP 
-      ? "CRITICAL: Maintain the EXACT typography, font style, and design layout from the reference image. If the reference image has text, REPLACE it with the new headlines provided. If the reference image has NO text, you MUST create a new professional typography layout that matches the aesthetic."
-      : config.designStrategy === DesignStrategy.EVOLVE
-      ? "Base the design on the reference image's typography and layout, but improve it with better spacing, glow effects, and modern touches. If the reference has no text, create a superior professional layout. REPLACE any old text with the new headlines."
-      : "Create a COMPLETELY NEW design layout and typography. Ignore the reference image's text and layout, but maintain the subject's identity.";
 
     let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY, PREMIUM VISUAL QUALITY, and CLEAR TEXT OVERLAY.
+    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY.
     
-    TEXT OVERLAY REQUIREMENTS (MANDATORY):
-    - You MUST render the following text clearly on the image:
-      - MAIN HEADLINE: "${headline}"
-      - SUB-HEADLINE: "${subHeadline}"
-    - This is a conversion ad; the text MUST be visible, legible, and professionally styled.
-    - If the reference image has existing text, REPLACE it entirely with these new headlines.
-    - If the reference image has NO text, you MUST create a new professional typography layout that complements the scene.
-    - The text must be perfectly legible, using high-contrast colors and professional fonts.
-    - Apply graphic design effects like drop shadows, glows, or background overlays to ensure the text pops.
+    CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity.
     
-    DESIGN STRATEGY: ${designStrategyPrompt}
-    
-    PRIMARY STYLE: ${stylePrompt || 'Professional Advertising Photography, High-End Commercial Aesthetic'}
-    ${corporatePrompt}
-    ${genrePrompt}
-    ${moodPrompt}
-    
-    CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity. The person must appear integrated into the environment, not cut and pasted.
-    
-    CRITICAL TEXT REPLACEMENT:
-    - The reference image contains text that MUST be removed or covered.
-    - DO NOT just add new text on top of the old one.
-    - The new headlines MUST replace the existing ones.
-    - If the reference image has "R$3K MENSAL", and the new headline is "R$5K MENSAL", ensure ONLY "R$5K MENSAL" is visible in the final result.
-    - Use the same font family and visual weight as the original text if KEEP or EVOLVE strategy is selected.
-    
-    FINAL CHECK: Ensure "${headline}" is the most prominent text element in the image.
+    TEXT OVERLAY (Portuguese): 
+    - Headline: "${headline}"
+    - Sub-headline: "${subHeadline}"
 
-    ELEVAÇÃO DE QUALIDADE (MANDATORY):
-    1. COMPOSIÇÃO E PROFUNDIDADE:
-       - Crie pelo menos 3 planos de profundidade distintos: fundo (efeitos/waveform), meio (pessoa com iluminação integrada), frente (textos e UI elements).
-       - Elementos gráficos do fundo devem passar ATRÁS e também na frente da pessoa em regiões periféricas, criando sensação de imersão real.
-    
-    2. ILUMINAÇÃO E GLOW:
-       - A fonte de luz principal deve ser coerente com os elementos neon ao redor.
-       - A pessoa deve receber um rim light (contorno de luz) na cor do tema.
-       - O glow dos textos neon deve ter gradação: núcleo brilhante → halo difuso → fade.
-       - Sombras da pessoa devem respeitar a direção da luz ambiente.
-    
-    3. TIPOGRAFIA E HIERARQUIA:
-       - Use hierarquia visual clara: headline dominante, subheadline de apoio.
-       - Ajuste o letter-spacing (kerning) para ser mais fechado em headlines impactantes.
-       - Elementos numéricos (ex: "7 dias", "R$ 1.000") devem ter destaque massivo (3x maior/mais pesado).
-       - Misture pesos de fonte (Ultra Bold com Light) na mesma frase para criar ritmo visual.
-    
-    4. EFEITOS GRÁFICOS:
-       - Adicione waveforms (ondas sonoras/gráficos) com opacidade variável no fundo.
-       - Elementos flutuantes (partículas, ícones) devem ter desfoque de movimento (motion blur) progressivo.
-       - Aplique scanlines sutis ou grão cinematográfico para tirar o aspecto "liso" de IA.
-       - Use light flares (reflexos de lente) intensos onde houver elementos neon.
-    
-    5. ACABAMENTO FINAL:
-       - Vinheta suave nas bordas para focar a atenção no centro.
-       - Hierarquia de leitura clara: Logo → Headline → CTA (se houver).
-       - Não deixe elementos visuais competirem entre si; o que é fundo deve ser fundo.
-       - Qualidade de entrega: "Senior Art Director" — nível de produção dos maiores players do mercado digital brasileiro (Hotmart/Kiwify top sellers).
-
-    CUSTOM INSTRUCTIONS: "${artDirection}"
+    ART DIRECTION INSTRUCTIONS: "${artDirection}"
 
     STYLE REFERENCE: ${analysis.visualStyle}. 
     SCENE CONTEXT: ${sceneContext}.
@@ -284,11 +205,6 @@ export class GeminiService {
 
     const parts: any[] = [];
     
-    // Always include the base image (reference) if it exists, as it contains the identity to be preserved
-    if (baseImg) {
-      parts.push({ inlineData: { mimeType: this.getMimeType(baseImg), data: baseImg.split(',')[1] } });
-    }
-
     if (specificAsset) {
       parts.push({ inlineData: { mimeType: this.getMimeType(specificAsset), data: specificAsset.split(',')[1] } });
     } else if (config.assetImages.length > 0) {
@@ -299,6 +215,10 @@ export class GeminiService {
 
     if (config.logoImage) {
       parts.push({ inlineData: { mimeType: this.getMimeType(config.logoImage), data: config.logoImage.split(',')[1] } });
+    }
+    
+    if (baseImg && config.assetImages.length === 0) {
+      parts.push({ inlineData: { mimeType: this.getMimeType(baseImg), data: baseImg.split(',')[1] } });
     }
     
     parts.push({ text: prompt });
@@ -350,7 +270,25 @@ export class GeminiService {
     const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
     let lastError: any = null;
 
-    const stylePrompt = GeminiService.styleContexts[config.artisticStyle] || config.artisticStyle;
+    const styleContexts: Record<string, string> = {
+      'Realistic': 'High-fidelity, sharp focus, natural lighting, realistic textures, 8k resolution.',
+      'Cinematic': 'Dramatic lighting, anamorphic lens flares, shallow depth of field, color graded, epic scale.',
+      'Anime': 'Japanese animation style, vibrant colors, clean lines, expressive characters, cel-shaded.',
+      'Architecture': 'Clean lines, geometric precision, wide-angle lens, professional architectural photography.',
+      'Cartoon': 'Playful, exaggerated features, bold colors, 2D vector style, friendly atmosphere.',
+      '3D Render': 'Octane render, Ray tracing, Unreal Engine 5 style, high detail, volumetric lighting.',
+      'Vector': 'Flat design, clean paths, minimalist, scalable vector graphics style.',
+      'Watercolor': 'Soft edges, bleeding colors, paper texture, artistic brush strokes.',
+      'Sketch / Line Art': 'Hand-drawn, pencil or ink lines, cross-hatching, artistic draft style.',
+      'Oil Painting': 'Thick impasto brushwork, rich textures, classic fine art style.',
+      'Abstract': 'Non-representational, focus on form and color, emotional, conceptual.',
+      'Surreal': 'Dreamlike, illogical juxtapositions, Salvador Dali style, mind-bending visuals.',
+      'Fashion': 'High-end editorial, studio lighting, stylish composition, vogue aesthetic.',
+      'Photography': 'Professional DSLR quality, natural composition, authentic feel.',
+      'Portrait': 'Close-up, soft background blur, focus on facial details and expression.'
+    };
+
+    const stylePrompt = styleContexts[config.artisticStyle] || config.artisticStyle;
     const corporatePrompt = config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : '';
     const genrePrompt = config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : '';
     const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
@@ -365,28 +303,6 @@ export class GeminiService {
     CONTEXT: ${config.context || 'A visually stunning scene matching the selected styles.'}
     
     MODE: ${config.mode === PhotoGenerationMode.COMBINE ? 'Combine the visual elements of the provided images into a new cohesive scene.' : config.mode === PhotoGenerationMode.REFERENCE ? 'Use the style and composition of the provided image as a reference for the new generation.' : 'Generate from scratch based on the context.'}
-    
-    ELEVAÇÃO DE QUALIDADE (MANDATORY):
-    1. COMPOSIÇÃO E PROFUNDIDADE:
-       - A pessoa deve parecer integrada ao ambiente, não recortada e colada.
-       - Crie pelo menos 3 planos de profundidade distintos.
-       - Elementos gráficos do fundo devem passar ATRÁS e também na frente da pessoa em regiões periféricas.
-    
-    2. ILUMINAÇÃO E GLOW:
-       - A fonte de luz principal deve ser coerente com os elementos neon ao redor.
-       - A pessoa deve receber um rim light (contorno de luz) na cor do tema.
-       - Glows devem ter gradação: núcleo brilhante → halo difuso → fade.
-       - Sombras devem respeitar a direção da luz ambiente.
-    
-    3. EFEITOS GRÁFICOS:
-       - Adicione waveforms ou elementos gráficos com opacidade variável no fundo.
-       - Elementos flutuantes devem ter desfoque de movimento progressivo.
-       - Aplique scanlines sutis ou grão cinematográfico.
-       - Use light flares intensos onde houver luzes fortes.
-    
-    4. ACABAMENTO FINAL:
-       - Vinheta suave nas bordas.
-       - Qualidade de entrega: "Senior Art Director" — nível de produção dos maiores players do mercado digital brasileiro.
     
     CRITICAL: High quality, professional lighting, perfect composition.`;
 
@@ -455,71 +371,6 @@ export class GeminiService {
           ]
         }
       });
-      const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
-      if (imgPart?.inlineData?.data) {
-        const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
-        return await this.optimizeImageSize(rawUrl);
-      }
-      return null;
-    });
-  }
-
-  static async editImage(config: EditConfig): Promise<string | null> {
-    return await this.withRetry(async () => {
-      const ai = this.getAi();
-      const base64Data = config.image.split(',')[1];
-      
-      const parts: any[] = [
-        { inlineData: { data: base64Data, mimeType: 'image/jpeg' } }
-      ];
-
-      let enhancedInstruction = `EDIT INSTRUCTION: ${config.instruction}.`;
-
-      if (config.newCharacterImage) {
-        const charBase64 = config.newCharacterImage.split(',')[1];
-        parts.push({ inlineData: { data: charBase64, mimeType: 'image/jpeg' } });
-        enhancedInstruction += ` Use the second image as the new character/person to replace the one in the first image. Maintain the pose and lighting of the original scene.`;
-      }
-
-      if (config.maskImage) {
-        const maskBase64 = config.maskImage.split(',')[1];
-        parts.push({ inlineData: { data: maskBase64, mimeType: 'image/png' } });
-        enhancedInstruction += ` The third image is a mask indicating the area to remove or modify. Focus the edit on the white/marked areas.`;
-      }
-
-      if (config.targetText) {
-        enhancedInstruction += ` The specific text to update or add is: "${config.targetText}". Ensure it is legible and fits the style.`;
-      }
-
-      if (config.targetColor) {
-        enhancedInstruction += ` Use the color ${config.targetColor} as the primary theme or for the specific elements mentioned.`;
-      }
-
-      if (config.glowIntensity !== undefined) {
-        enhancedInstruction += ` Set the glow/neon intensity to level ${config.glowIntensity} (where 0 is none and 100 is maximum).`;
-      }
-
-      enhancedInstruction += ` 
-      CRITICAL: This is an EDIT task, not a new generation. 
-      1. PRESERVE the identity, face, and features of any person in the image 100%.
-      2. MAINTAIN the background, lighting, and overall composition exactly as it is, unless specifically asked to change it.
-      3. ONLY modify the specific elements requested in the instruction.
-      4. Ensure the integration of new elements is seamless and matches the original style.
-      5. DO NOT add any new elements or text that were not requested.
-      6. If a character is being replaced, use the second image as the source for the new character, but keep the original pose and lighting.`;
-
-      parts.push({ text: enhancedInstruction });
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts },
-        config: {
-          imageConfig: {
-            aspectRatio: config.aspectRatio === "4:5" ? "3:4" : config.aspectRatio as any
-          }
-        }
-      });
-
       const imgPart = response.candidates?.[0]?.content?.parts?.find(p => !!p.inlineData);
       if (imgPart?.inlineData?.data) {
         const rawUrl = `data:image/png;base64,${imgPart.inlineData.data}`;
