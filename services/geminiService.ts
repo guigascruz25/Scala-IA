@@ -211,17 +211,27 @@ export class GeminiService {
     const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
 
     const designStrategyPrompt = config.designStrategy === DesignStrategy.KEEP 
-      ? "CRITICAL: Maintain the EXACT typography, font style, and design layout from the reference image. REPLACE the old text with the new headlines provided. DO NOT leave the old text visible."
+      ? "CRITICAL: Maintain the EXACT typography, font style, and design layout from the reference image. If the reference image has text, REPLACE it with the new headlines provided. If the reference image has NO text, you MUST create a new professional typography layout that matches the aesthetic."
       : config.designStrategy === DesignStrategy.EVOLVE
-      ? "Base the design on the reference image's typography and layout, but improve it with better spacing, glow effects, and modern touches. REPLACE the old text with the new headlines."
+      ? "Base the design on the reference image's typography and layout, but improve it with better spacing, glow effects, and modern touches. If the reference has no text, create a superior professional layout. REPLACE any old text with the new headlines."
       : "Create a COMPLETELY NEW design layout and typography. Ignore the reference image's text and layout, but maintain the subject's identity.";
 
     let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY and PREMIUM VISUAL QUALITY.
+    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY, PREMIUM VISUAL QUALITY, and CLEAR TEXT OVERLAY.
+    
+    TEXT OVERLAY REQUIREMENTS (MANDATORY):
+    - You MUST render the following text clearly on the image:
+      - MAIN HEADLINE: "${headline}"
+      - SUB-HEADLINE: "${subHeadline}"
+    - This is a conversion ad; the text MUST be visible, legible, and professionally styled.
+    - If the reference image has existing text, REPLACE it entirely with these new headlines.
+    - If the reference image has NO text, you MUST create a new professional typography layout that complements the scene.
+    - The text must be perfectly legible, using high-contrast colors and professional fonts.
+    - Apply graphic design effects like drop shadows, glows, or background overlays to ensure the text pops.
     
     DESIGN STRATEGY: ${designStrategyPrompt}
     
-    PRIMARY STYLE: ${stylePrompt}
+    PRIMARY STYLE: ${stylePrompt || 'Professional Advertising Photography, High-End Commercial Aesthetic'}
     ${corporatePrompt}
     ${genrePrompt}
     ${moodPrompt}
@@ -235,9 +245,7 @@ export class GeminiService {
     - If the reference image has "R$3K MENSAL", and the new headline is "R$5K MENSAL", ensure ONLY "R$5K MENSAL" is visible in the final result.
     - Use the same font family and visual weight as the original text if KEEP or EVOLVE strategy is selected.
     
-    TEXT OVERLAY (Portuguese): 
-    - Headline: "${headline}"
-    - Sub-headline: "${subHeadline}"
+    FINAL CHECK: Ensure "${headline}" is the most prominent text element in the image.
 
     ELEVAÇÃO DE QUALIDADE (MANDATORY):
     1. COMPOSIÇÃO E PROFUNDIDADE:
