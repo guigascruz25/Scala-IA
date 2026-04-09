@@ -136,6 +136,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
           if (header === 'subheadline') item.subHeadline = values[index];
           if (header === 'description') item.description = values[index];
           if (header === 'art_direction') item.artDirection = values[index];
+          if (header === 'highlight') item.highlight = values[index];
         });
         return item as BatchItem;
       });
@@ -308,7 +309,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                       </button>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Headline #{idx + 1}</label>
                         <input 
@@ -327,6 +328,17 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                           value={copy.subHeadline}
                           onChange={e => updateCopy(idx, 'subHeadline', e.target.value)}
                           placeholder="Ex: Aumente sua produtividade em até 10x"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Highlight #{idx + 1}</label>
+                        <input 
+                          type="text"
+                          value={copy.highlight || ''}
+                          onChange={e => updateCopy(idx, 'highlight', e.target.value)}
+                          placeholder="Ex: 7 dias grátis"
                           className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-purple-500 transition-all"
                         />
                       </div>

@@ -154,7 +154,8 @@ export class GeminiService {
               undefined, 
               seedOffset,
               item.description,
-              item.artDirection
+              item.artDirection,
+              item.highlight
             );
             if (res) results.push(res);
           }
@@ -176,7 +177,10 @@ export class GeminiService {
               copy.subHeadline, 
               baseImageBase64, 
               undefined, 
-              seedOffset
+              seedOffset,
+              undefined,
+              undefined,
+              copy.highlight
             );
             if (res) results.push(res);
           }
@@ -196,83 +200,95 @@ export class GeminiService {
     specificAsset?: string,
     seedOffset?: number,
     batchDescription?: string,
-    batchArtDirection?: string
+    batchArtDirection?: string,
+    highlight?: string
   ): Promise<GeneratedImage | null> {
     const models = ['gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
     let lastError: any = null;
 
     const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
-    const artDirection = batchArtDirection || config.complementaryPrompt || 'Maintain aesthetic harmony and modern composition.';
-    const sceneContext = batchDescription || analysis.basePrompt;
     
-    const stylePrompt = config.artisticStyle ? (GeminiService.styleContexts[config.artisticStyle] || config.artisticStyle) : '';
-    const corporatePrompt = config.corporateStyle ? `CORPORATE STYLE: ${config.corporateStyle}` : '';
-    const genrePrompt = config.genreTheme ? `GENRE/THEME: ${config.genreTheme}` : '';
-    const moodPrompt = config.moodTone ? `MOOD/TONE: ${config.moodTone}` : '';
+    let prompt = `Você é um designer especialista em anúncios de performance para Meta Ads.
 
-    const designStrategyPrompt = config.designStrategy === DesignStrategy.KEEP 
-      ? "CRITICAL: Maintain the EXACT typography, font style, and design layout from the reference image. REPLACE the old text with the new headlines provided. DO NOT leave the old text visible."
-      : config.designStrategy === DesignStrategy.EVOLVE
-      ? "Base the design on the reference image's typography and layout, but improve it with better spacing, glow effects, and modern touches. REPLACE the old text with the new headlines."
-      : "Create a COMPLETELY NEW design layout and typography. Ignore the reference image's text and layout, but maintain the subject's identity.";
+OBJETIVO:
+Gerar uma nova arte mantendo o mesmo layout visual da imagem de referência, porém substituindo completamente todos os textos pelos textos fornecidos neste prompt.
 
-    let prompt = `SENIOR ART DIRECTOR & AD STRATEGIST.
-    PRIMARY OBJECTIVE: Create a high-performance conversion ad image with ABSOLUTE IDENTITY FIDELITY and PREMIUM VISUAL QUALITY.
-    
-    DESIGN STRATEGY: ${designStrategyPrompt}
-    
-    PRIMARY STYLE: ${stylePrompt}
-    ${corporatePrompt}
-    ${genrePrompt}
-    ${moodPrompt}
-    
-    CRITICAL INSTRUCTION: The person/subject in the reference image MUST be 100% identical in the new composition. Maintain every facial feature, expression, and unique characteristic. DO NOT alter the person's identity. The person must appear integrated into the environment, not cut and pasted.
-    
-    CRITICAL TEXT REPLACEMENT:
-    - The reference image contains text that MUST be removed or covered.
-    - DO NOT just add new text on top of the old one.
-    - The new headlines MUST replace the existing ones.
-    - If the reference image has "R$3K MENSAL", and the new headline is "R$5K MENSAL", ensure ONLY "R$5K MENSAL" is visible in the final result.
-    - Use the same font family and visual weight as the original text if KEEP or EVOLVE strategy is selected.
-    
-    TEXT OVERLAY (Portuguese): 
-    - Headline: "${headline}"
-    - Sub-headline: "${subHeadline}"
+REGRA CRÍTICA (OBRIGATÓRIA):
+Ignorar completamente qualquer texto existente na imagem de referência.
+Nunca reutilizar textos da imagem original.
+Nunca manter palavras antigas.
+Sempre substituir 100% pelos textos abaixo.
 
-    ELEVAÇÃO DE QUALIDADE (MANDATORY):
-    1. COMPOSIÇÃO E PROFUNDIDADE:
-       - Crie pelo menos 3 planos de profundidade distintos: fundo (efeitos/waveform), meio (pessoa com iluminação integrada), frente (textos e UI elements).
-       - Elementos gráficos do fundo devem passar ATRÁS e também na frente da pessoa em regiões periféricas, criando sensação de imersão real.
-    
-    2. ILUMINAÇÃO E GLOW:
-       - A fonte de luz principal deve ser coerente com os elementos neon ao redor.
-       - A pessoa deve receber um rim light (contorno de luz) na cor do tema.
-       - O glow dos textos neon deve ter gradação: núcleo brilhante → halo difuso → fade.
-       - Sombras da pessoa devem respeitar a direção da luz ambiente.
-    
-    3. TIPOGRAFIA E HIERARQUIA:
-       - Use hierarquia visual clara: headline dominante, subheadline de apoio.
-       - Ajuste o letter-spacing (kerning) para ser mais fechado em headlines impactantes.
-       - Elementos numéricos (ex: "7 dias", "R$ 1.000") devem ter destaque massivo (3x maior/mais pesado).
-       - Misture pesos de fonte (Ultra Bold com Light) na mesma frase para criar ritmo visual.
-    
-    4. EFEITOS GRÁFICOS:
-       - Adicione waveforms (ondas sonoras/gráficos) com opacidade variável no fundo.
-       - Elementos flutuantes (partículas, ícones) devem ter desfoque de movimento (motion blur) progressivo.
-       - Aplique scanlines sutis ou grão cinematográfico para tirar o aspecto "liso" de IA.
-       - Use light flares (reflexos de lente) intensos onde houver elementos neon.
-    
-    5. ACABAMENTO FINAL:
-       - Vinheta suave nas bordas para focar a atenção no centro.
-       - Hierarquia de leitura clara: Logo → Headline → CTA (se houver).
-       - Não deixe elementos visuais competirem entre si; o que é fundo deve ser fundo.
-       - Qualidade de entrega: "Senior Art Director" — nível de produção dos maiores players do mercado digital brasileiro (Hotmart/Kiwify top sellers).
+TEXTOS OFICIAIS DA ARTE (USAR SOMENTE ESTES):
 
-    CUSTOM INSTRUCTIONS: "${artDirection}"
+HEADLINE:
+"${headline}"
 
-    STYLE REFERENCE: ${analysis.visualStyle}. 
-    SCENE CONTEXT: ${sceneContext}.
-    VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
+SUBHEADLINE:
+"${subHeadline}"
+
+HIGHLIGHT OPCIONAL:
+"${highlight || ''}"
+
+Não adicionar textos extras.
+Não alterar palavras.
+Não resumir textos.
+Não adaptar textos.
+Não reutilizar textos da imagem original.
+
+REGRAS DE LAYOUT (LOCK VISUAL):
+
+Manter exatamente:
+
+– proporção 4:5
+– estilo visual dark premium
+– grid de posicionamento
+– posição do personagem
+– posição da headline
+– posição da subheadline
+– posição do highlight
+– enquadramento
+– contraste
+– iluminação
+– tipografia moderna sem serifa
+– hierarquia visual
+
+Pode variar apenas:
+
+– micro elementos gráficos
+– textura do fundo
+– expressão do personagem
+– pequenos detalhes decorativos
+
+NÃO FAZER:
+
+não criar novo layout
+não mudar estrutura
+não mover textos de posição
+não alterar tipografia drasticamente
+não copiar textos da imagem original
+não misturar textos antigos com novos
+
+IMPORTANTE:
+
+Esta arte faz parte de uma campanha publicitária.
+Todas as variações devem parecer criadas pelo mesmo designer.
+Todas devem manter identidade visual consistente.
+
+FORMATO FINAL:
+
+Instagram Ads
+proporção ${format.ratio}
+alto contraste
+performance marketing SaaS premium
+visual limpo
+fundo escuro moderno
+estética Meta Ads profissional
+
+REFERÊNCIA VISUAL: ${analysis.visualStyle}.
+CONTEXTO DA CENA: ${batchDescription || analysis.basePrompt}.
+DIREÇÃO DE ARTE ADICIONAL: ${batchArtDirection || config.complementaryPrompt || ''}
+VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
     const parts: any[] = [];
     

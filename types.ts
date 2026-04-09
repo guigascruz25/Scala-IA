@@ -10,6 +10,7 @@ export interface BatchItem {
   subHeadline: string;
   description: string;
   artDirection: string;
+  highlight?: string;
 }
 
 export enum PhotoGenerationMode {
@@ -51,6 +52,7 @@ export interface CreativeAnalysis {
 export interface AdCopy {
   headline: string;
   subHeadline: string;
+  highlight?: string;
 }
 
 export type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9" | "4:5";
