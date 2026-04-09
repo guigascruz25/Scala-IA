@@ -5,6 +5,7 @@ import ImageUpload from './components/ImageUpload.tsx';
 import AnalysisView from './components/AnalysisView.tsx';
 import EvolutionForm from './components/EvolutionForm.tsx';
 import GalleryView from './components/GalleryView.tsx';
+import ImageEditor from './components/ImageEditor.tsx';
 import ChatBot from './components/ChatBot.tsx';
 import { GeminiService } from './services/geminiService.ts';
 import { CreativeAnalysis, GeneratedImage, GenerationConfig, PhotoGenerationConfig } from './types.ts';
@@ -30,6 +31,7 @@ const App: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<CreativeAnalysis | null>(null);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [directEditImage, setDirectEditImage] = useState<GeneratedImage | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [switchMessage, setSwitchMessage] = useState<string | null>(null);
@@ -66,8 +68,22 @@ const App: React.FC = () => {
     setOriginalImage(null);
     setAnalysis(null);
     setGeneratedImages([]);
+    setDirectEditImage(null);
     setIsProcessing(false);
     setSwitchMessage(null);
+  };
+
+  const handleEditExisting = (base64: string) => {
+    setIsProcessing(false);
+    const mockImage: GeneratedImage = {
+      id: `existing-${Date.now()}`,
+      url: base64,
+      prompt: "Arte carregada para edição direta",
+      aspectRatio: "1:1",
+      timestamp: Date.now(),
+      label: "Arte Existente"
+    };
+    setDirectEditImage(mockImage);
   };
 
   const onImageUpload = async (base64: string) => {
@@ -285,7 +301,7 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-32 bg-slate-950 text-slate-200">
       <Header onLogoClick={resetApp} onDisconnectKey={handleDisconnectKey} />
       <main className="px-6 max-w-7xl mx-auto">
-        {isProcessing ? (
+        {directEditImage ? null : isProcessing ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-10 animate-in fade-in duration-700">
             <div className="relative">
               <div className="w-24 h-24 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
@@ -319,6 +335,7 @@ const App: React.FC = () => {
               <ImageUpload 
                 onUpload={onImageUpload} 
                 onStartFromScratch={handleStartFromScratch}
+                onEditExisting={handleEditExisting}
                 isLoading={isProcessing} 
               />
             )}
@@ -361,6 +378,13 @@ const App: React.FC = () => {
         )}
       </main>
       <ChatBot />
+      {directEditImage && (
+        <ImageEditor 
+          image={directEditImage}
+          onClose={() => setDirectEditImage(null)}
+          onUpdate={(newUrl) => setDirectEditImage(prev => prev ? { ...prev, url: newUrl } : null)}
+        />
+      )}
     </div>
   );
 };

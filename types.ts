@@ -64,8 +64,15 @@ export interface RequestedFormat {
   isCustom: boolean;
 }
 
+export enum DesignStrategy {
+  KEEP = 'KEEP',
+  EVOLVE = 'EVOLVE',
+  NEW = 'NEW'
+}
+
 export interface GenerationConfig {
   evolutionType: EvolutionType;
+  designStrategy?: DesignStrategy;
   modifications?: {
     person?: string;
     scenario?: string;
@@ -79,8 +86,23 @@ export interface GenerationConfig {
   count: number;
   formats: RequestedFormat[];
   size: "1K" | "2K" | "4K";
+  artisticStyle?: string;
+  corporateStyle?: string;
+  genreTheme?: string;
+  moodTone?: string;
   assetImages: string[];
   logoImage?: string;
+}
+
+export interface EditConfig {
+  instruction: string;
+  image: string; // base64
+  aspectRatio: AspectRatio;
+  newCharacterImage?: string; // base64
+  targetText?: string;
+  targetColor?: string;
+  maskImage?: string; // base64 for inpainting/removal
+  glowIntensity?: number;
 }
 
 export interface GeneratedImage {
