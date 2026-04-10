@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode, BatchItem, DesignStrategy } from '../types.ts';
+import { EvolutionType, GenerationConfig, AdCopy, AspectRatio, RequestedFormat, PhotoGenerationConfig, PhotoGenerationMode, BatchItem, DesignStrategy, CreativeAnalysis } from '../types.ts';
 import { GeminiService } from '../services/geminiService.ts';
 
 interface EvolutionFormProps {
@@ -22,6 +22,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
     copies: [{ headline: '', subHeadline: '' }],
     complementaryPrompt: '',
     assetImages: [],
+    elementImages: [],
     logoImage: undefined
   });
 
@@ -41,9 +42,27 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
   const [photoCustomW, setPhotoCustomW] = useState<string>('');
   const [photoCustomH, setPhotoCustomH] = useState<string>('');
   const assetInputRef = useRef<HTMLInputElement>(null);
+  const elementInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const batchInputRef = useRef<HTMLInputElement>(null);
+  const [poseWarning, setPoseWarning] = useState<string | null>(null);
+
+  const checkPose = async (userImage: string) => {
+    try {
+      if (!context) return; // No reference image to compare to
+      const refAnalysis = JSON.parse(context) as CreativeAnalysis;
+      const userPose = await GeminiService.analyzeUserPhoto(userImage);
+      
+      if (refAnalysis.keyElements.pose.headOrientation !== userPose.headOrientation) {
+        setPoseWarning(`Para um resultado sensacional, tire uma foto sua agora com o rosto virado para o mesmo lado que o da imagem de referência que você nos mandou (${refAnalysis.keyElements.pose.headOrientation === 'front' ? 'de frente' : 'de lado'}).`);
+      } else {
+        setPoseWarning(null);
+      }
+    } catch (e) {
+      console.error("Pose check failed", e);
+    }
+  };
 
   const artisticStyles = [
     'Realistic', 'Cinematic', 'Anime', 'Architecture', 'Cartoon', 
@@ -88,7 +107,7 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
     setCustomW(''); setCustomH('');
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'asset' | 'logo' | 'photo') => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'asset' | 'logo' | 'photo' | 'element') => {
     const files = e.target.files;
     if (!files) return;
 
@@ -108,8 +127,14 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
         const file = files[0];
         if (file) {
           const base64 = await processFile(file);
-          if (type === 'asset') setConfig(prev => ({ ...prev, assetImages: [...prev.assetImages, base64] }));
-          else setConfig(prev => ({ ...prev, logoImage: base64 }));
+          if (type === 'asset') {
+            setConfig(prev => ({ ...prev, assetImages: [...prev.assetImages, base64] }));
+            checkPose(base64);
+          } else if (type === 'element') {
+            setConfig(prev => ({ ...prev, elementImages: [...prev.elementImages, base64] }));
+          } else {
+            setConfig(prev => ({ ...prev, logoImage: base64 }));
+          }
         }
       }
       e.target.value = '';
@@ -252,15 +277,16 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
             {/* 02 - Ativos */}
             <section className="space-y-4">
               <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">02</span> Biblioteca de Ativos
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">02</span> 2. Sua Foto & Elementos
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <p className="text-xs text-slate-400 mb-4">Suba sua foto para ser inserida na arte e elementos opcionais para compor a cena.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sua Foto (Personagem)</label>
                   <div className="flex flex-wrap gap-3 p-4 bg-slate-900/40 border border-slate-800 rounded-2xl min-h-[140px]">
                     {config.assetImages.map((img, idx) => (
                       <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 group">
                         <img src={img} className="w-full h-full object-cover" />
-                        <div className="absolute top-1 left-1 bg-black/60 text-[8px] px-1 rounded text-white font-bold">#{idx+1}</div>
                         <button onClick={() => setConfig(prev => ({...prev, assetImages: prev.assetImages.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500/80 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg></button>
                       </div>
                     ))}
@@ -270,11 +296,38 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
                     </button>
                   </div>
                   <input type="file" ref={assetInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'asset')} />
+                  
+                  {poseWarning && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                      <p className="text-[10px] text-amber-500 leading-tight font-medium">⚠️ {poseWarning}</p>
+                    </div>
+                  )}
                 </div>
-                <div onClick={() => logoInputRef.current?.click()} className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center gap-2 ${config.logoImage ? 'border-purple-500 bg-purple-900/10' : 'border-slate-700 bg-slate-900/50'}`}>
-                  {config.logoImage ? <img src={config.logoImage} className="h-20 object-contain" /> : <p className="text-slate-500 text-xs">Carregar Logo</p>}
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Elementos (Opcional)</label>
+                  <div className="flex flex-wrap gap-3 p-4 bg-slate-900/40 border border-slate-800 rounded-2xl min-h-[140px]">
+                    {config.elementImages.map((img, idx) => (
+                      <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 group">
+                        <img src={img} className="w-full h-full object-cover" />
+                        <button onClick={() => setConfig(prev => ({...prev, elementImages: prev.elementImages.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500/80 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                      </div>
+                    ))}
+                    <button onClick={() => elementInputRef.current?.click()} className="w-24 h-24 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-purple-500 hover:bg-purple-900/10 transition-all text-slate-500 hover:text-purple-400">
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      <span className="text-[10px] font-bold">Adicionar</span>
+                    </button>
+                  </div>
+                  <input type="file" ref={elementInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'element')} />
                 </div>
-                <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sua Logo</label>
+                  <div onClick={() => logoInputRef.current?.click()} className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-4 flex flex-col items-center justify-center gap-2 h-[140px] ${config.logoImage ? 'border-purple-500 bg-purple-900/10' : 'border-slate-700 bg-slate-900/50'}`}>
+                    {config.logoImage ? <img src={config.logoImage} className="h-20 object-contain" /> : <p className="text-slate-500 text-xs">Carregar Logo</p>}
+                  </div>
+                  <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+                </div>
               </div>
             </section>
 
@@ -282,18 +335,20 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
             <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">03</span> Textos do Anúncio (Headlines)
+                  <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">03</span> 3. Headlines & Subheadlines
                 </h3>
                 <button 
                   onClick={addCopy}
-                  className="text-[10px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300 transition-colors flex items-center gap-1"
+                  disabled={config.copies.length >= 5}
+                  className="text-[10px] font-black text-purple-400 uppercase tracking-widest hover:text-purple-300 transition-colors flex items-center gap-1 disabled:opacity-50"
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                   </svg>
-                  Adicionar Variante
+                  Adicionar Variante (Max 5)
                 </button>
               </div>
+              <p className="text-xs text-slate-400">O sistema irá gerar variações aleatórias baseadas nestes textos para testar performance.</p>
               
               <div className="space-y-4">
                 {config.copies.map((copy, idx) => (
@@ -348,10 +403,10 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               </div>
             </section>
 
-            {/* 04 - Instruções de Direção de Arte */}
+            {/* 04 - Direção de Arte */}
             <section className="space-y-4">
               <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> Instruções de Direção de Arte
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">04</span> 4. Direção de Arte
               </h3>
               <textarea 
                 value={config.complementaryPrompt}
@@ -361,9 +416,32 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
               />
             </section>
 
-            {/* 05 - Formatos & Configs Finais */}
+            {/* 05 - Formatos & Resolução */}
             <section className="space-y-10">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                <span className="bg-purple-600 text-[10px] px-2 py-1 rounded">05</span> Formatos & Resolução
+              </h3>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Qualidade de Saída</label>
+                  <div className="flex gap-2">
+                    {['1K', '2K', '4K'].map((res) => (
+                      <button
+                        key={res}
+                        onClick={() => setConfig(prev => ({ ...prev, size: res as any }))}
+                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${
+                          config.size === res 
+                            ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-500/20' 
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        {res}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Formatos (Scaling)</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -436,7 +514,11 @@ const EvolutionForm: React.FC<EvolutionFormProps> = ({ onGenerate, onGeneratePho
 
             <div className="pt-6">
               <button 
-                onClick={() => onGenerate(config)} 
+                onClick={() => {
+                  const copiesToUse = config.copies.filter(c => c.headline.trim() || c.subHeadline.trim());
+                  const finalCopies = copiesToUse.length > 0 ? copiesToUse : config.copies;
+                  onGenerate({ ...config, copies: finalCopies });
+                }} 
                 disabled={isGenerating || (config.evolutionType === EvolutionType.FROM_SCRATCH && !config.artisticStyle && !config.complementaryPrompt)} 
                 className="relative w-full bg-gradient-to-r from-purple-600 to-purple-800 py-6 rounded-2xl font-black text-xl text-white hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-purple-500/20 disabled:opacity-50 overflow-hidden group"
               >

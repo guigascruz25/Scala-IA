@@ -45,6 +45,21 @@ export interface CreativeAnalysis {
     text?: string;
     background?: string;
     dominantColors?: string;
+    faceMetrics?: {
+      eyeDistance: string;
+      noseToEyeRatio: string;
+      faceShape: string;
+      eyeSize: string;
+      mouthWidth: string;
+      chinShape: string;
+      foreheadHeight: string;
+      detailedFeatures: string;
+    };
+    pose: {
+      headOrientation: 'front' | 'side-left' | 'side-right' | 'tilted';
+      bodyOrientation: string;
+      gazeDirection: string;
+    };
   };
   basePrompt: string;
 }
@@ -93,6 +108,7 @@ export interface GenerationConfig {
   genreTheme?: string;
   moodTone?: string;
   assetImages: string[];
+  elementImages: string[];
   logoImage?: string;
 }
 

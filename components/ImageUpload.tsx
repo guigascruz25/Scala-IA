@@ -79,12 +79,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ onUpload, onStartFromScratch,
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold mb-2">
-        {mode === 'analysis' ? 'Carregue seu Criativo' : 'Edite sua Arte'}
+      <h2 className="text-3xl font-bold mb-3 text-white tracking-tight">
+        {mode === 'analysis' ? '1. Arte de Referência' : 'Edite sua Arte'}
       </h2>
-      <p className="text-slate-400 mb-8">
+      <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
         {mode === 'analysis' 
-          ? 'Analise qualquer imagem de anúncio para gerar variações de alta conversão.' 
+          ? 'Suba a imagem que você deseja copiar o layout, cores e estilo. Nossa IA de elite vai analisar cada detalhe para recriá-la.' 
           : 'Suba uma imagem para abrir o editor completo de inteligência artificial.'}
       </p>
       

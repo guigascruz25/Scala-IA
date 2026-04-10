@@ -290,7 +290,12 @@ const App: React.FC = () => {
         object: 'None',
         text: 'None',
         background: 'Studio',
-        dominantColors: 'Neutral'
+        dominantColors: 'Neutral',
+        pose: {
+          headOrientation: 'front',
+          bodyOrientation: 'front',
+          gazeDirection: 'front'
+        }
       },
       basePrompt: 'A high-quality professional advertisement background'
     });
@@ -361,7 +366,7 @@ const App: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <EvolutionForm onGenerate={onGenerate} onGeneratePhoto={onGeneratePhoto} isGenerating={isProcessing} context={analysis?.basePrompt || ''} />
+                <EvolutionForm onGenerate={onGenerate} onGeneratePhoto={onGeneratePhoto} isGenerating={isProcessing} context={analysis ? JSON.stringify(analysis) : ''} />
               </div>
             )}
             {step === 'results' && (

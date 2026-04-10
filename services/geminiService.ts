@@ -98,8 +98,31 @@ export class GeminiService {
 
         return await this.withRetry(async () => {
           const ai = this.getAi();
-          const prompt = `Analise este criativo publicitário. Forneça uma resposta JSON onde TODOS os valores dos campos sejam STRINGS simples.
-          Campos: visualStyle, creativeType, implicitAudience, emotions, visualStructure, keyElements { person, object, text, background, dominantColors }, basePrompt (técnico em inglês).`;
+          const prompt = `Você é um especialista em análise técnica de imagem e biometria facial para manipulação digital de elite.
+          Analise este criativo publicitário e forneça uma resposta JSON extremamente detalhada.
+          
+          FOCO EM CONSISTÊNCIA DE PERSONAGEM:
+          No campo 'faceMetrics', detalhe cada aspecto matemático e visual do rosto: distância entre olhos, proporção nariz-olho, formato do queixo, testa, etc. Isso é uma LEI inquebrável para a recriação.
+          
+          FOCO EM POSE:
+          No campo 'pose', identifique exatamente a orientação da cabeça ('front', 'side-left', 'side-right', 'tilted'), orientação do corpo e direção do olhar.
+          
+          Campos: 
+          - visualStyle (estilo visual geral)
+          - creativeType (tipo de anúncio)
+          - implicitAudience (público-alvo)
+          - emotions (emoções transmitidas)
+          - visualStructure (composição e grid)
+          - keyElements { 
+              person (detalhes da pessoa), 
+              object (objetos na cena), 
+              text (textos existentes), 
+              background (cenário), 
+              dominantColors (paleta),
+              faceMetrics { eyeDistance, noseToEyeRatio, faceShape, eyeSize, mouthWidth, chinShape, foreheadHeight, detailedFeatures },
+              pose { headOrientation, bodyOrientation, gazeDirection }
+            }
+          - basePrompt (técnico em inglês para recriação perfeita).`;
 
           const mimeType = this.getMimeType(base64Image);
           const response = await ai.models.generateContent({
@@ -114,15 +137,31 @@ export class GeminiService {
           });
 
           return JSON.parse(response.text || '{}') as CreativeAnalysis;
-        }, i === 0 ? 2 : 1); // Fewer retries for primary to fail faster and switch
+        }, i === 0 ? 2 : 1);
       } catch (error: any) {
         lastError = error;
         console.warn(`Falha no modelo ${model}:`, error);
-        // Continue to next model
       }
     }
 
     throw lastError || new Error("Todos os modelos de análise falharam.");
+  }
+
+  static async analyzeUserPhoto(base64Image: string): Promise<{ headOrientation: string }> {
+    const ai = this.getAi();
+    const prompt = `Analise apenas a orientação da cabeça desta pessoa. Responda APENAS com um JSON: {"headOrientation": "front" | "side-left" | "side-right" | "tilted"}`;
+    const mimeType = this.getMimeType(base64Image);
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: { 
+        parts: [
+          { inlineData: { mimeType, data: base64Image.split(',')[1] } }, 
+          { text: prompt }
+        ] 
+      },
+      config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(response.text || '{"headOrientation": "front"}');
   }
 
   static async generateVariations(
@@ -208,86 +247,42 @@ export class GeminiService {
 
     const apiRatio = format.ratio === "4:5" ? "3:4" : format.ratio;
     
-    let prompt = `Você é um designer especialista em anúncios de performance para Meta Ads.
+    let prompt = `Você é um profissional de elite em manipulação de imagens, especialista em colorimetria, tipografia e anúncios de alta performance para Meta e Google Ads.
 
 OBJETIVO:
-Gerar uma nova arte mantendo o mesmo layout visual da imagem de referência, porém substituindo completamente todos os textos pelos textos fornecidos neste prompt.
+Recriar a imagem de referência com fidelidade absoluta ao layout, mas substituindo o personagem original pelo personagem enviado (User Image).
 
-REGRA CRÍTICA (OBRIGATÓRIA):
-Ignorar completamente qualquer texto existente na imagem de referência.
-Nunca reutilizar textos da imagem original.
-Nunca manter palavras antigas.
-Sempre substituir 100% pelos textos abaixo.
+REGRA DE PERSONAGEM (LEI INQUEBRÁVEL):
+- Mantenha 100% da aparência, traços e identidade da User Image.
+- Use as métricas faciais detalhadas: ${JSON.stringify(analysis.keyElements.faceMetrics)}.
+- A iluminação e as cores no rosto do novo personagem devem ser perfeitamente harmonizadas com a cena original (Colorimetria de Elite).
+- Se a pose da User Image for diferente da referência, tente adaptar com naturalidade, mas priorize a harmonia visual.
 
-TEXTOS OFICIAIS DA ARTE (USAR SOMENTE ESTES):
+ESPAÇAMENTO E SEGURANÇA (META ADS):
+- Respeite as grades de segurança do Instagram Reels/Stories.
+- Deixe áreas de respiro profissionais.
+- NÃO coloque textos ou elementos importantes onde ficam a foto de perfil (topo esquerdo) ou as legendas/botões (base e lateral direita).
+- Coloque Headline e Subheadline em áreas de baixo ruído visual para legibilidade máxima.
 
-HEADLINE:
-"${headline}"
+TEXTOS (OPCIONAIS):
+HEADLINE: "${headline || ''}"
+SUBHEADLINE: "${subHeadline || ''}"
+HIGHLIGHT: "${highlight || ''}"
 
-SUBHEADLINE:
-"${subHeadline}"
+ELEMENTOS ADICIONAIS:
+- Se foram enviados "elementos", insira-os de forma inteligente na cena.
+- Se a referência tem elementos voando (ex: ícones, papéis), substitua-os pelos elementos enviados pelo usuário.
 
-HIGHLIGHT OPCIONAL:
-"${highlight || ''}"
-
-Não adicionar textos extras.
-Não alterar palavras.
-Não resumir textos.
-Não adaptar textos.
-Não reutilizar textos da imagem original.
-
-REGRAS DE LAYOUT (LOCK VISUAL):
-
-Manter exatamente:
-
-– proporção 4:5
-– estilo visual dark premium
-– grid de posicionamento
-– posição do personagem
-– posição da headline
-– posição da subheadline
-– posição do highlight
-– enquadramento
-– contraste
-– iluminação
-– tipografia moderna sem serifa
-– hierarquia visual
-
-Pode variar apenas:
-
-– micro elementos gráficos
-– textura do fundo
-– expressão do personagem
-– pequenos detalhes decorativos
-
-NÃO FAZER:
-
-não criar novo layout
-não mudar estrutura
-não mover textos de posição
-não alterar tipografia drasticamente
-não copiar textos da imagem original
-não misturar textos antigos com novos
-
-IMPORTANTE:
-
-Esta arte faz parte de uma campanha publicitária.
-Todas as variações devem parecer criadas pelo mesmo designer.
-Todas devem manter identidade visual consistente.
+LOCK VISUAL:
+- Mantenha: proporção ${format.ratio}, estilo ${analysis.visualStyle}, enquadramento e contraste.
+- Qualidade: "Elite Photoshop Manipulation" — sem artefatos de IA, visual limpo e profissional.
 
 FORMATO FINAL:
-
-Instagram Ads
-proporção ${format.ratio}
-alto contraste
-performance marketing SaaS premium
-visual limpo
-fundo escuro moderno
-estética Meta Ads profissional
+Instagram Ads, alto contraste, performance marketing SaaS premium.
 
 REFERÊNCIA VISUAL: ${analysis.visualStyle}.
-CONTEXTO DA CENA: ${batchDescription || analysis.basePrompt}.
-DIREÇÃO DE ARTE ADICIONAL: ${batchArtDirection || config.complementaryPrompt || ''}
+CONTEXTO DA CENA: ${analysis.basePrompt}.
+DIREÇÃO DE ARTE: ${batchArtDirection || config.complementaryPrompt || ''}
 VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
     const parts: any[] = [];
@@ -307,6 +302,12 @@ VARIATION SEED: ${Date.now() + (seedOffset || 0)}`;
 
     if (config.logoImage) {
       parts.push({ inlineData: { mimeType: this.getMimeType(config.logoImage), data: config.logoImage.split(',')[1] } });
+    }
+
+    if (config.elementImages.length > 0) {
+      config.elementImages.forEach(elem => {
+        parts.push({ inlineData: { mimeType: this.getMimeType(elem), data: elem.split(',')[1] } });
+      });
     }
     
     parts.push({ text: prompt });

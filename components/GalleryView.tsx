@@ -13,6 +13,7 @@ interface GalleryViewProps {
 const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUpdate }) => {
   const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
   const [previewImage, setPreviewImage] = useState<GeneratedImage | null>(null);
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [quickEditId, setQuickEditId] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -45,9 +46,26 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, onDownload, onImageUp
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {images.map((img) => (
-          <div key={img.id} className="group relative glass-effect rounded-3xl overflow-hidden border border-slate-700 hover:border-purple-500/50 transition-all duration-500 flex flex-col">
+          <div 
+            key={img.id} 
+            className="group relative glass-effect rounded-3xl overflow-hidden border border-slate-700 hover:border-purple-500/50 transition-all duration-500 flex flex-col"
+            onMouseEnter={() => setHoveredImage(img.id)}
+            onMouseLeave={() => setHoveredImage(null)}
+            onTouchStart={() => {
+              const timer = setTimeout(() => setPreviewImage(img), 800);
+              (window as any)._touchTimer = timer;
+            }}
+            onTouchEnd={() => clearTimeout((window as any)._touchTimer)}
+          >
             <div className={`overflow-hidden bg-slate-950 relative flex items-center justify-center aspect-square cursor-pointer`} onClick={() => setPreviewImage(img)}>
               <img src={img.url} alt={img.prompt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              
+              {hoveredImage === img.id && (
+                <div className="absolute inset-0 z-50 pointer-events-none animate-in fade-in duration-200">
+                  <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]" />
+                  <img src={img.url} alt="Quick Preview" className="absolute inset-4 object-contain rounded-xl shadow-2xl border border-white/20 scale-110 transition-transform duration-300" />
+                </div>
+              )}
 
               <div className="absolute top-4 right-4 flex gap-2 z-20">
                 <button 
